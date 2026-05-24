@@ -36,3 +36,4 @@ build/
 
 .soloncode/
 /.qoder/
+.ace-tool/
