@@ -20,7 +20,13 @@ import org.dromara.warm.flow.core.dto.Tree;
 import java.util.List;
 
 /**
- * 自定义表单路径接口
+ * 动态表单列表接口
+ *
+ * 约定：
+ * 1. 返回给设计器的树结构用于 `formCustom = 'Y'` 的动态表单下拉；
+ * 2. Tree.value 必须是已发布动态表单主键 ID；
+ * 3. Tree.label / name 用于前端展示；
+ * 4. 前端选中后会把该值写入 definition / node 的 formPath 字段。
  *
  * @author warm
  * @since 2025/10/22
@@ -28,9 +34,9 @@ import java.util.List;
 public interface FormPathService {
 
     /**
-     * 查询自定义表单路径
+     * 查询设计器可选的动态表单树
      *
-     * @return 自定义表单路径
+     * @return 动态表单树，value 为动态表单主键 ID
      */
     List<Tree> queryFormPath();
 }

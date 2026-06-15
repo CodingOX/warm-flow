@@ -18,6 +18,7 @@ package org.dromara.warm.flow.ui.service;
 import lombok.extern.slf4j.Slf4j;
 import org.dromara.warm.flow.core.FlowEngine;
 import org.dromara.warm.flow.core.config.WarmFlow;
+import org.dromara.warm.flow.core.constant.FlowCons;
 import org.dromara.warm.flow.core.dto.*;
 import org.dromara.warm.flow.core.entity.Form;
 import org.dromara.warm.flow.core.entity.Instance;
@@ -34,6 +35,8 @@ import org.dromara.warm.flow.ui.utils.TreeUtil;
 import org.dromara.warm.flow.ui.vo.*;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -43,6 +46,9 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 public class WarmFlowService {
+
+    private static final Pattern FORM_DATA_REF_PATTERN = Pattern.compile("\\b" + FlowCons.FORM_DATA + "\\.([a-zA-Z_][\\w]*)\\b");
+    private static final Pattern SIMPLE_BARE_FIELD_PATTERN = Pattern.compile("^(gt|ge|eq|ne|lt|le|like|notLike)@@([a-zA-Z_][\\w]*)\\|.*$");
 
     /**
      * 返回流程定义的配置
@@ -77,8 +83,181 @@ public class WarmFlowService {
      * @since 2024/10/29 16:31
      */
     public static ApiResult<Void> saveJson(DefJson defJson, boolean onlyNodeSkip) throws Exception {
+        validateDynamicFormConditions(defJson);
         FlowEngine.defService().saveDef(defJson, onlyNodeSkip);
         return ApiResult.ok();
+    }
+
+    private static void validateDynamicFormConditions(DefJson defJson) {
+        if (!hasDynamicFormBinding(defJson)) {
+            return;
+        }
+        Map<String, Set<String>> formFieldsCache = new HashMap<>();
+        if (defJson.getNodeList() == null) {
+            return;
+        }
+        for (NodeJson nodeJson : defJson.getNodeList()) {
+            Set<String> nodeFields = loadEffectiveFormFields(defJson, nodeJson, formFieldsCache);
+            if (StringUtils.isEmpty(resolveEffectiveFormId(defJson, nodeJson))) {
+                continue;
+            }
+            scanSkipConditions(nodeJson, nodeFields);
+        }
+    }
+
+    static boolean hasDynamicFormBinding(DefJson defJson) {
+        if (defJson == null) {
+            return false;
+        }
+        if (FlowCons.FORM_CUSTOM_Y.equals(defJson.getFormCustom()) && StringUtils.isNotEmpty(defJson.getFormPath())) {
+            return true;
+        }
+        if (defJson.getNodeList() == null) {
+            return false;
+        }
+        for (NodeJson nodeJson : defJson.getNodeList()) {
+            if (nodeJson != null && FlowCons.FORM_CUSTOM_Y.equals(nodeJson.getFormCustom())
+                && StringUtils.isNotEmpty(nodeJson.getFormPath())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static void scanSkipConditions(NodeJson nodeJson, Set<String> formFields) {
+        if (nodeJson == null || nodeJson.getSkipList() == null || nodeJson.getSkipList().isEmpty()) {
+            return;
+        }
+        for (SkipJson skipJson : nodeJson.getSkipList()) {
+            if (skipJson == null || StringUtils.isEmpty(skipJson.getSkipCondition())) {
+                continue;
+            }
+            validateConditionText(nodeJson, skipJson, formFields);
+        }
+    }
+
+    private static void validateConditionText(NodeJson nodeJson, SkipJson skipJson, Set<String> formFields) {
+        String condition = skipJson.getSkipCondition();
+        if (StringUtils.isEmpty(condition)) {
+            return;
+        }
+        if (condition.contains("form.")) {
+            throw new FlowException(buildConditionError(nodeJson, skipJson, "动态表单字段引用必须使用 formData.<field> 形式"));
+        }
+        Set<String> refs = extractFormDataRefs(condition);
+        for (String ref : refs) {
+            if (!formFields.contains(ref)) {
+                throw new FlowException(buildConditionError(nodeJson, skipJson, "当前动态表单未包含字段：" + ref));
+            }
+        }
+        String bareRef = extractSimpleBareRef(condition);
+        if (StringUtils.isNotEmpty(bareRef) && formFields.contains(bareRef)) {
+            throw new FlowException(buildConditionError(nodeJson, skipJson, "动态表单字段引用必须使用 formData.<field> 形式"));
+        }
+    }
+
+    private static String buildConditionError(NodeJson nodeJson, SkipJson skipJson, String reason) {
+        String nodeName = nodeJson == null ? "" : StringUtils.emptyDefault(nodeJson.getNodeName(), nodeJson.getNodeCode());
+        String skipName = skipJson == null ? "" : StringUtils.emptyDefault(skipJson.getSkipName(), skipJson.getNextNodeCode());
+        return "节点【" + nodeName + "】跳转【" + skipName + "】" + reason;
+    }
+
+    static Set<String> extractFormDataRefs(String condition) {
+        Set<String> refs = new HashSet<>();
+        if (StringUtils.isEmpty(condition)) {
+            return refs;
+        }
+        Matcher matcher = FORM_DATA_REF_PATTERN.matcher(condition);
+        while (matcher.find()) {
+            refs.add(matcher.group(1));
+        }
+        return refs;
+    }
+
+    static String extractSimpleBareRef(String condition) {
+        if (StringUtils.isEmpty(condition) || condition.contains(FlowCons.FORM_DATA + ".")) {
+            return null;
+        }
+        Matcher matcher = SIMPLE_BARE_FIELD_PATTERN.matcher(condition);
+        return matcher.matches() ? matcher.group(2) : null;
+    }
+
+    private static Set<String> loadEffectiveFormFields(DefJson defJson, NodeJson nodeJson, Map<String, Set<String>> formFieldsCache) {
+        String formId = resolveEffectiveFormId(defJson, nodeJson);
+        if (StringUtils.isEmpty(formId)) {
+            return Collections.emptySet();
+        }
+        try {
+            Long id = Long.valueOf(formId);
+            if (formFieldsCache.containsKey(formId)) {
+                return formFieldsCache.get(formId);
+            }
+            Form form = FlowEngine.formService().getById(id);
+            if (form == null || StringUtils.isEmpty(form.getFormContent())) {
+                formFieldsCache.put(formId, Collections.emptySet());
+                return Collections.emptySet();
+            }
+            Set<String> fields = extractFormFields(form.getFormContent());
+            formFieldsCache.put(formId, fields);
+            return fields;
+        } catch (Exception e) {
+            throw new FlowException("读取动态表单字段失败，请检查表单是否存在且内容合法", e);
+        }
+    }
+
+    private static String resolveEffectiveFormId(DefJson defJson, NodeJson nodeJson) {
+        if (nodeJson != null && FlowCons.FORM_CUSTOM_Y.equals(nodeJson.getFormCustom()) && StringUtils.isNotEmpty(nodeJson.getFormPath())) {
+            return nodeJson.getFormPath();
+        }
+        if (defJson != null && FlowCons.FORM_CUSTOM_Y.equals(defJson.getFormCustom()) && StringUtils.isNotEmpty(defJson.getFormPath())) {
+            return defJson.getFormPath();
+        }
+        return null;
+    }
+
+    static Set<String> extractFormFields(String formContent) {
+        Set<String> fields = new HashSet<>();
+        if (StringUtils.isEmpty(formContent)) {
+            return fields;
+        }
+        Map<String, Object> content = FlowEngine.jsonConvert.strToMap(formContent);
+        Object ruleObj = content.get("rule");
+        if (!(ruleObj instanceof List<?>)) {
+            return fields;
+        }
+        List<?> ruleList = (List<?>) ruleObj;
+        for (Object item : ruleList) {
+            collectFormFields(item, fields);
+        }
+        return fields;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void collectFormFields(Object item, Set<String> fields) {
+        if (!(item instanceof Map<?, ?>)) {
+            return;
+        }
+        Map<?, ?> ruleMap = (Map<?, ?>) item;
+        Object fieldObj = ruleMap.get("field");
+        if (fieldObj != null && StringUtils.isNotEmpty(fieldObj.toString())) {
+            fields.add(fieldObj.toString().trim());
+        }
+        Object childrenObj = ruleMap.get("children");
+        if (childrenObj instanceof List<?>) {
+            for (Object child : (List<Object>) childrenObj) {
+                collectFormFields(child, fields);
+            }
+        }
+        Object propsObj = ruleMap.get("props");
+        if (propsObj instanceof Map<?, ?>) {
+            Map<?, ?> propsMap = (Map<?, ?>) propsObj;
+            Object optionsChildren = propsMap.get("children");
+            if (optionsChildren instanceof List<?>) {
+                for (Object child : (List<Object>) optionsChildren) {
+                    collectFormFields(child, fields);
+                }
+            }
+        }
     }
 
     /**
@@ -104,6 +283,8 @@ public class WarmFlowService {
                 List<Tree> treeList = categoryService.queryCategory();
                 defJson.setCategoryList(TreeUtil.buildTree(treeList));
             }
+            // 设计器里的动态表单下拉统一走 formPathList。
+            // 约定 Tree.value 为动态表单主键 ID，前端在 formCustom = 'Y' 时写入 formPath。
             FormPathService formPathService = FrameInvoker.getBean(FormPathService.class);
             if (formPathService != null) {
                 List<Tree> treeList = formPathService.queryFormPath();
