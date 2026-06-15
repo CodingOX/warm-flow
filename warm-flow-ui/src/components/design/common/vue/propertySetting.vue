@@ -183,8 +183,9 @@ watch(() => props.node, n => {
           }
       }
 
-      n.properties.formCustom = JSON.stringify(n.properties) === "{}" ? "N" : (n.properties.formCustom ?
-          n.properties.formCustom : props.formPathList && props.formPathList.length > 0 ? "Y" :"N");
+      n.properties.formCustom = JSON.stringify(n.properties) === "{}"
+        ? "N"
+        : (n.properties.formCustom ? n.properties.formCustom : "N");
       let listenerTypes = n.properties.listenerType ? n.properties.listenerType.split(",") : [];
       let listenerPaths = n.properties.listenerPath ? n.properties.listenerPath.split("@@") : [];
       n.properties.listenerRows = listenerTypes && listenerTypes.length > 0 ? listenerTypes.map((type, index) => ({

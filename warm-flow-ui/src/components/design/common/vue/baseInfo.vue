@@ -70,7 +70,7 @@
                 </div>
                 <div class="radio-card-info">
                   <div class="radio-card-title">是</div>
-                  <div class="radio-card-desc">选择自定义表单</div>
+                  <div class="radio-card-desc">选择动态表单</div>
                 </div>
               </div>
             </el-radio>
@@ -81,14 +81,15 @@
           <el-input v-model="form.formPath" placeholder="请输入审批表单路径" maxlength="100" show-word-limit/>
         </el-form-item>
 
-        <el-form-item label="表单唯一标识" prop="formPath" v-else-if="form.formCustom === 'Y'">
+        <el-form-item label="动态表单" prop="formPath" v-else-if="form.formCustom === 'Y'">
             <el-tree-select
                 v-model="form.formPath"
                 :data="formPathList"
                 :props="{ value: 'id', label: 'name', children: 'children' }"
                 value-key="id"
-                placeholder="请选择流程类别"
+                placeholder="请选择已发布动态表单"
                 check-strictly/>
+          <div class="radio-card-warning">如分支条件需要引用动态表单字段，请使用 `formData.字段Key` 形式。</div>
         </el-form-item>
       </div>
 
@@ -212,16 +213,29 @@ const form = ref({
   listenerPath: "",
   listenerRows: []
 });
+const lastFormCustom = ref(form.value.formCustom);
 
 watch(() => props.logicJson, newValue => {
   if (newValue && Object.keys(newValue).length > 0) {
     Object.assign(form.value, newValue);
     setListenerData();
+    lastFormCustom.value = form.value.formCustom || "N";
     // 移动端新增时强制默认仿钉钉（覆盖logicJson中可能为空的值）
     if (isMobile.value && !props.definitionId) {
       form.value.modelValue = 'MIMIC';
     }
   }
+});
+
+watch(() => form.value.formCustom, (next) => {
+  const normalizedNext = next || "N";
+  if (lastFormCustom.value === normalizedNext) {
+    return;
+  }
+
+  // N/Y 共享 formPath 字段，但语义不同，切换时必须清空旧值避免串值
+  form.value.formPath = "";
+  lastFormCustom.value = normalizedNext;
 });
 
 const definitionList = ref([]);
@@ -304,6 +318,7 @@ function modelValueChange() {
 function getFormData() {
   form.value.listenerType = form.value.listenerRows.map(row => row.listenerType).join(",")
   form.value.listenerPath = form.value.listenerRows.map(row => row.listenerPath).join("@@")
+  form.value.formPath = form.value.formPath ? String(form.value.formPath).trim() : ""
   return form.value;
 }
 
@@ -445,7 +460,7 @@ getListenerList()
   font-weight: 600;
   color: var(--wf-text-primary, #303133);
   letter-spacing: 0.5px;
-  /* 固定 label 宽度，按最长"表单唯一标识"(6字)对齐 */
+  /* 固定 label 宽度，按最长"动态表单"(4字) / "监听器配置"一类标签统一对齐 */
   width: 110px !important;
   min-width: 110px !important;
 

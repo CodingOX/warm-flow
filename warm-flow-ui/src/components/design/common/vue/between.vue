@@ -127,7 +127,7 @@
             >
               <span class="radio-card-dot"></span>
               <span class="radio-card-text">是</span>
-              <el-tooltip effect="dark" placement="top" content="填写自定义表单的唯一标识：如formCode+version">
+              <el-tooltip effect="dark" placement="top" content="选择已发布动态表单，保存值为动态表单主键 ID">
                 <el-icon :size="13" class="radio-card-tip"><WarningFilled /></el-icon>
               </el-tooltip>
             </label>
@@ -137,14 +137,15 @@
         <el-form-item label="表单路径：" prop="formPath" v-if="form.formCustom === 'N'">
           <el-input v-model="form.formPath"></el-input>
         </el-form-item>
-        <el-form-item label="表单唯一标识：" prop="formPath" v-else-if="form.formCustom === 'Y'">
+        <el-form-item label="动态表单：" prop="formPath" v-else-if="form.formCustom === 'Y'">
             <el-tree-select
                 v-model="form.formPath"
                 :data="formPathList"
                 :props="{ value: 'id', label: 'name', children: 'children' }"
                 value-key="id"
-                placeholder="请选择流程类别"
+                placeholder="请选择已发布动态表单"
                 check-strictly/>
+          <div class="placeholder mt5">如当前节点后的分支条件要引用动态表单字段，请使用 `formData.字段Key`。</div>
         </el-form-item>
           </div>
         </div>
@@ -350,6 +351,7 @@ const tabsList = ref([
   { label: "监听器", name: "3" },
 ]);
 const form = ref(props.modelValue);
+const lastFormCustom = ref(form.value?.formCustom || "N");
 const userVisible = ref(false);
 const framework = getFramework()
 //基础设置扩展属性
@@ -418,6 +420,17 @@ watch(() => form.value, n => {
       n.nodeRatio = nodeRatio + (n.nodeRatioValue ? n.nodeRatioValue : '')
   }
 },{ deep: true });
+
+watch(() => form.value.formCustom, (next) => {
+  const normalizedNext = next || "N";
+  if (lastFormCustom.value === normalizedNext) {
+    return;
+  }
+
+  // N/Y 共用 formPath 字段，切换时清空旧值，避免页面路径和动态表单 ID 串用
+  form.value.formPath = "";
+  lastFormCustom.value = normalizedNext;
+});
 
 function validatePassRatio(rule, value, callback) {
     if (value === '' || value === undefined || value === null) {

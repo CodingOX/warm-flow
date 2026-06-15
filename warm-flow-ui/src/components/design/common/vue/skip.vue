@@ -21,7 +21,7 @@
             </el-select>
           </el-form-item>
           <el-form-item label="跳转条件：" v-if="skipConditionShow" prop="skipCondition">
-            <el-input v-model="form.condition" v-if="!expressFlag" placeholder="条件名" :style="{ width: !expressFlag? '30%' : '0%' }"/>
+            <el-input v-model="form.condition" v-if="!expressFlag" placeholder="条件名，动态表单请以 formData. 开头" :style="{ width: !expressFlag? '30%' : '0%' }"/>
             <el-select v-model="form.conditionType" placeholder="请选择条件方式" :style="{ width: expressFlag? '18%' : '25%', 'margin-left': '1%' }"
                        clearable @change="changeOper" @clear="handleClear">
                 <el-option label="大于" value="gt"/>
@@ -38,6 +38,7 @@
             </el-select>
             <el-input v-model="form.conditionValue" :placeholder="getConditionDescription()" :style="{ width: expressFlag? '80%' : '43%', 'margin-left': '1%' }"/>
           </el-form-item>
+          <div v-if="skipConditionShow" class="placeholder">绑定动态表单后，条件里引用字段统一使用 `formData.字段Key`，不要写 `form.xxx`。</div>
         </div>
       </div>
     </el-form>
@@ -163,11 +164,11 @@ function getConditionDescription() {
     const type = form.value.conditionType;
     switch (type) {
         case 'default':
-            return '请输入默认表达式,格式如: ${flag == 5 && flag > 4}';
+            return '请输入默认表达式，如: ${formData.leaveDays > 3}';
         case 'spel':
-            return '请输入spel表达式，格式如: #{@user.eval(#flag)}';
+            return '请输入spel表达式，如: #{#formData.leaveDays > 3}';
         case 'snel':
-            return '请输入snel表达式，格式如: #{@user.eval(flag)}';
+            return '请输入snel表达式，如: #{formData.leaveDays > 3}';
         default:
             return '请输入';
     }
