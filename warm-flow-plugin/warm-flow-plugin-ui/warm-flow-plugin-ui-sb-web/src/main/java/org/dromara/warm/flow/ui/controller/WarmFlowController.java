@@ -146,7 +146,7 @@ public class WarmFlowController {
      */
     @Transactional(rollbackFor = Exception.class)
     @PostMapping("/form-content")
-    public ApiResult<Void> saveFormContent(@RequestBody FlowDto flowDto) {
+    public ApiResult<FlowDto> saveFormContent(@RequestBody FlowDto flowDto) {
         return WarmFlowService.saveFormContent(flowDto);
     }
 

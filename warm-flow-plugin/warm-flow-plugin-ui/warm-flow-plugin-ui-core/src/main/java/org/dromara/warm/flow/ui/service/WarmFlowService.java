@@ -446,7 +446,8 @@ public class WarmFlowService {
      */
     public static ApiResult<String> getFormContent(Long id) {
         try {
-            return ApiResult.ok(FlowEngine.formService().getById(id).getFormContent());
+            Form form = FlowEngine.formService().getById(id);
+            return ApiResult.ok(form == null ? null : form.getFormContent());
         } catch (Exception e) {
             log.error("获取表单内容字符串", e);
             throw new FlowException(ExceptionUtil.handleMsg("获取表单内容字符串失败", e));
@@ -459,9 +460,108 @@ public class WarmFlowService {
      * @param flowDto
      * @return
      */
-    public static ApiResult<Void> saveFormContent(FlowDto flowDto) {
-        FlowEngine.formService().saveContent(flowDto.getId(), flowDto.getFormContent());
-        return ApiResult.ok();
+    public static ApiResult<FlowDto> saveFormContent(FlowDto flowDto) {
+        try {
+            String formContent = flowDto == null ? null : flowDto.getFormContent();
+            Form form = null;
+            if (flowDto != null && flowDto.getId() != null) {
+                form = FlowEngine.formService().getById(flowDto.getId());
+            }
+
+            Long formId;
+            if (form == null) {
+                form = createDraftForm(formContent);
+                formId = form.getId();
+            } else {
+                syncDraftFormName(form, formContent);
+                FlowEngine.formService().saveContent(form.getId(), formContent);
+                formId = form.getId();
+            }
+
+            FlowDto result = new FlowDto();
+            result.setId(formId);
+            return ApiResult.ok(result);
+        } catch (Exception e) {
+            log.error("保存表单内容", e);
+            throw new FlowException(ExceptionUtil.handleMsg("保存表单内容失败", e));
+        }
+    }
+
+    /**
+     * type=form 页面允许直接进入空白创建态，因此首次保存时需要自动补一条草稿表单记录。
+     */
+    private static Form createDraftForm(String formContent) {
+        Form form = FlowEngine.newForm();
+        if (FlowEngine.dataFillHandler() != null) {
+            FlowEngine.dataFillHandler().idFill(form);
+        }
+        Long draftId = ensureDraftId(form);
+        form.setFormCode(buildDraftFormCode(draftId));
+        form.setFormName(resolveDraftFormName(formContent, draftId));
+        form.setFormType(0);
+        form.setIsPublish(0);
+        form.setFormContent(formContent);
+        FlowEngine.formService().save(form);
+        return form;
+    }
+
+    private static Long ensureDraftId(Form form) {
+        if (form.getId() != null) {
+            return form.getId();
+        }
+        Long draftId = System.currentTimeMillis();
+        form.setId(draftId);
+        return draftId;
+    }
+
+    static String buildDraftFormCode(Long draftId) {
+        return "FORM_" + draftId;
+    }
+
+    static String buildDraftFormName(Long draftId) {
+        return "未命名表单_" + draftId;
+    }
+
+    static String extractFormName(String formContent) {
+        if (StringUtils.isEmpty(formContent) || FlowEngine.jsonConvert == null) {
+            return null;
+        }
+        try {
+            Map<String, Object> content = FlowEngine.jsonConvert.strToMap(formContent);
+            if (content == null) {
+                return null;
+            }
+            Object optionObj = content.get("option");
+            if (!(optionObj instanceof Map<?, ?>)) {
+                return null;
+            }
+            Object formNameObj = ((Map<?, ?>) optionObj).get("formName");
+            if (formNameObj == null) {
+                return null;
+            }
+            String formName = formNameObj.toString().trim();
+            return StringUtils.isEmpty(formName) ? null : formName;
+        } catch (Exception e) {
+            log.warn("解析表单名称失败，将回退到默认命名", e);
+            return null;
+        }
+    }
+
+    static String resolveDraftFormName(String formContent, Long draftId) {
+        String formName = extractFormName(formContent);
+        return StringUtils.isNotEmpty(formName) ? formName : buildDraftFormName(draftId);
+    }
+
+    private static void syncDraftFormName(Form form, String formContent) {
+        if (form == null || StringUtils.isEmpty(formContent) || form.getIsPublish() == null || form.getIsPublish() != 0) {
+            return;
+        }
+        String parsedFormName = extractFormName(formContent);
+        if (StringUtils.isEmpty(parsedFormName) || parsedFormName.equals(form.getFormName())) {
+            return;
+        }
+        form.setFormName(parsedFormName);
+        FlowEngine.formService().updateById(form);
     }
 
 

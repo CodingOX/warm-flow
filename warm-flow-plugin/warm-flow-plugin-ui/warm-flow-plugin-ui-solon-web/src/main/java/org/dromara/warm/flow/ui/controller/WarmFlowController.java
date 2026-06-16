@@ -170,7 +170,7 @@ public class WarmFlowController {
     @Post
     @Mapping("/form-content")
     @Transaction
-    public ApiResult<Void> saveFormContent(FlowDto flowDto) {
+    public ApiResult<FlowDto> saveFormContent(FlowDto flowDto) {
         return WarmFlowService.saveFormContent(flowDto);
     }
 

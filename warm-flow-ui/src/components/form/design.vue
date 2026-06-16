@@ -8,7 +8,8 @@
 import {getFormContent, saveFormContent} from '@/api/form/form';
 const { proxy } = getCurrentInstance();
 import useAppStore from "@/store/app";
-const appParams = computed(() => useAppStore().appParams);
+const appStore = useAppStore();
+const appParams = computed(() => appStore.appParams);
 
 const definitionId = ref("");
 const data = reactive({
@@ -35,8 +36,13 @@ function handleSave() {
     id: definitionId.value
   };
   saveFormContent(data).then(response => {
-    proxy.$modal.msgSuccess("保存成功");
     if (response.code === 200) {
+      const savedId = response.data?.id;
+      if (savedId) {
+        definitionId.value = String(savedId);
+        syncFormId(savedId);
+      }
+      proxy.$modal.msgSuccess("保存成功");
       // const obj = { path: "/form/formDefinition", query: { t: Date.now(), pageNum: proxy.$route.query.pageNum } };
       // proxy.$tab.closeOpenPage(obj);
       window.parent.postMessage({ method: "close" }, "*");
@@ -48,19 +54,28 @@ function handleSave() {
 function getInfo() {
   definitionId.value = appParams.value?.id;
   if (!definitionId.value) {
-    proxy.$modal.notifySuccess("流程id不能为空！");
-  } else {
-    getFormContent(definitionId.value).then(res => {
-      let formContent = res.data;
-      if (formContent) {
-        nextTick(() => {
-          formContent = JSON.parse(formContent);
-          if (formContent.rule) proxy.$refs.designer.setRule(formContent.rule);
-          if (formContent.option) proxy.$refs.designer.setOption(formContent.option);
-        });
-      }
-    });
+    return;
   }
+  getFormContent(definitionId.value).then(res => {
+    let formContent = res.data;
+    if (formContent) {
+      nextTick(() => {
+        formContent = JSON.parse(formContent);
+        if (formContent.rule) proxy.$refs.designer.setRule(formContent.rule);
+        if (formContent.option) proxy.$refs.designer.setOption(formContent.option);
+      });
+    }
+  });
+}
+
+function syncFormId(savedId) {
+  const nextParams = new URLSearchParams(window.location.search);
+  nextParams.set('id', savedId);
+  window.history.replaceState({}, '', `${window.location.pathname}?${nextParams.toString()}`);
+  appStore.appParams = {
+    ...(appParams.value || {}),
+    id: String(savedId)
+  };
 }
 getInfo();
 
