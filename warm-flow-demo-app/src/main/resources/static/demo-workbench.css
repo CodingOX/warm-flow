@@ -66,6 +66,89 @@ html, body {
   font-weight: 700;
 }
 
+.actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 20px 0;
+}
+
+.section-title {
+  margin: 0 0 10px;
+  font-size: 15px;
+  color: #93c5fd;
+}
+
+.def-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.def-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  transition: background 0.15s;
+}
+
+.def-item:hover {
+  background: rgba(255, 255, 255, 0.10);
+}
+
+.def-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.def-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f1f5f9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.def-meta {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.def-start-btn {
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 8px;
+  padding: 6px 14px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+  background: linear-gradient(135deg, #a5f3fc, #67e8f9);
+  transition: opacity 0.15s;
+}
+
+.def-start-btn:hover {
+  opacity: 0.85;
+}
+
+.def-empty {
+  color: #64748b;
+  font-size: 13px;
+  text-align: center;
+  padding: 16px 0;
+}
+
 .frame-shell {
   padding: 18px;
 }

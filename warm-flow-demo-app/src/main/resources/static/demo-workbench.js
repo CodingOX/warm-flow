@@ -53,5 +53,88 @@
     }
   });
 
+  // ========== 已发布流程列表与发起 ==========
+
+  const defListEl = document.getElementById('defList');
+
+  /** 渲染一条流程定义卡片 */
+  function renderDefItem(def) {
+    const li = document.createElement('li');
+    li.className = 'def-item';
+    li.innerHTML = `
+      <div class="def-info">
+        <span class="def-name">${escHtml(def.flowName)}</span>
+        <span class="def-meta">${escHtml(def.flowCode)} v${escHtml(def.version || '1')}</span>
+      </div>
+      <button class="def-start-btn" data-def-id="${def.id}">发起</button>
+    `;
+    li.querySelector('.def-start-btn').addEventListener('click', async () => {
+      await startFlow(def.id);
+    });
+    return li;
+  }
+
+  function escHtml(s) {
+    if (s == null) return '';
+    return String(s).replace(/[&<>"]/g, function (m) {
+      if (m === '&') return '&amp;';
+      if (m === '<') return '&lt;';
+      if (m === '>') return '&gt;';
+      if (m === '"') return '&quot;';
+      return m;
+    });
+  }
+
+  /** 拉取已发布流程定义列表 */
+  async function loadPublishedDefs() {
+    try {
+      const resp = await fetch('/demo/definitions/published');
+      const body = await resp.json();
+      if (body.code !== 200) {
+        log(`加载流程列表失败: ${body.msg}`);
+        return;
+      }
+      const list = body.data.list || [];
+      defListEl.innerHTML = '';
+      for (const def of list) {
+        defListEl.appendChild(renderDefItem(def));
+      }
+      if (list.length === 0) {
+        defListEl.innerHTML = '<li class="def-empty">暂无已发布流程</li>';
+      }
+      log(`已加载 ${list.length} 个已发布流程`);
+    } catch (e) {
+      log(`加载流程列表出错: ${e.message}`);
+    }
+  }
+
+  /** 发起一个流程定义 */
+  async function startFlow(defId) {
+    try {
+      openFrameButton.disabled = true;
+      const resp = await fetch(`/demo/definitions/start/${defId}`, { method: 'POST' });
+      const body = await resp.json();
+      if (body.code !== 200) {
+        log(`发起流程失败: ${body.msg}`);
+        return;
+      }
+      const { taskId, instanceId } = body.data;
+      log(`流程已发起: instanceId=${instanceId}, taskId=${taskId}`);
+
+      // 自动填充 taskId，切换到待办办理模式，打开 iframe
+      taskIdEl.value = taskId;
+      modeEl.value = '0';
+      iframe.src = formCreateUrl();
+      log(`自动打开待办: taskId=${taskId}`);
+    } catch (e) {
+      log(`发起流程出错: ${e.message}`);
+    } finally {
+      openFrameButton.disabled = false;
+    }
+  }
+
+  // 页面加载后自动拉取流程列表
+  loadPublishedDefs();
+
   log(`工作台已就绪，视角=${actorEl.value}`);
 }());
