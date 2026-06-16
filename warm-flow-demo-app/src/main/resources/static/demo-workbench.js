@@ -26,11 +26,12 @@
 
   function buildInitPayload() {
     const resolvedMode = resolveMode();
+    const editable = resolvedMode === '0' || resolvedMode === '3';
     return {
       taskId: taskIdEl.value.trim(),
       formId: formIdEl.value.trim(),
       type: resolvedMode,
-      disabled: resolvedMode !== '0'
+      disabled: !editable
     };
   }
 
@@ -130,7 +131,7 @@
       const { taskId, instanceId } = body.data;
       log(`流程已发起: instanceId=${instanceId}, taskId=${taskId}`);
 
-      // 自动填充 taskId，申请人默认以“申请人查看”模式打开，避免看到审批区。
+      // 自动填充 taskId，申请人默认以“申请人办理”模式打开：可填业务表单，但不显示审批区。
       taskIdEl.value = taskId;
       modeEl.value = actorEl.value === 'applicant' ? '3' : '0';
       iframe.src = formCreateUrl();

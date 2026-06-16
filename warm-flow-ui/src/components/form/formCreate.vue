@@ -16,6 +16,9 @@
       <el-button type="primary" @click="handleBtn('PASS')">审批通过</el-button>
       <el-button @click="handleBtn('REJECT')">退回</el-button>
     </div>
+    <div style="text-align: right;" v-else-if="showApplicantSubmit">
+      <el-button type="primary" @click="handleBtn('PASS')">提交表单</el-button>
+    </div>
   </el-form>
 </template>
 
@@ -25,8 +28,9 @@ import formCreate from "@form-create/element-ui";
 const { proxy } = getCurrentInstance();
 const disabled = ref(false);
 const fApi = ref(null);
-// 运行态壳层自行决定是否显示审批意见区；它不属于 form-create 的业务表单 schema。
+// 运行态壳层自行决定是否显示提交动作；这些动作不属于 form-create 的业务表单 schema。
 const showApprovalFields = ref(true);
+const showApplicantSubmit = ref(false);
 const taskId = ref("");
 const message = ref("");
 const data = reactive({
@@ -81,25 +85,30 @@ async function formInit(data) {
   // 0 = 待办办理（审批人）
   // 1 = 已办历史
   // 2 = 已发布表单预览
-  // 3 = 申请人视角（沿用任务数据加载，但不显示审批意见和审批动作）
+  // 3 = 申请人办理（沿用任务数据加载，可编辑业务表单，但不显示审批意见和审批动作）
   if (data.type === "0") {
     showApprovalFields.value = true;
+    showApplicantSubmit.value = false;
     reset();
     response = await executeLoad(data.taskId);
     if (!response.data) proxy.$modal.alertWarning("待办任务不存在");
     formContent = JSON.parse(response.data.form?.formContent);
   } else if (data.type === "3") {
     showApprovalFields.value = false;
+    showApplicantSubmit.value = true;
+    reset();
     response = await executeLoad(data.taskId);
     if (!response.data) proxy.$modal.alertWarning("待办任务不存在");
     formContent = JSON.parse(response.data.form?.formContent);
   } else if (data.type === "1") {
     showApprovalFields.value = false;
+    showApplicantSubmit.value = false;
     response = await hisLoad(data.taskId);
     if (!response.data) proxy.$modal.alertWarning("历史记录不存在");
     formContent = JSON.parse(response.data.form?.formContent);
   } else {
     showApprovalFields.value = false;
+    showApplicantSubmit.value = false;
     response = await getFormContent(data.formId);
     formContent = JSON.parse(response.data);
   }
