@@ -45,10 +45,11 @@ import java.util.stream.Collectors;
  * @author warm
  */
 @Slf4j
-public class WarmFlowService {
+    public class WarmFlowService {
 
     private static final Pattern FORM_DATA_REF_PATTERN = Pattern.compile("\\b" + FlowCons.FORM_DATA + "\\.([a-zA-Z_][\\w]*)\\b");
     private static final Pattern SIMPLE_BARE_FIELD_PATTERN = Pattern.compile("^(gt|ge|eq|ne|lt|le|like|notLike)@@([a-zA-Z_][\\w]*)\\|.*$");
+    private static final int FORM_CODE_MAX_LENGTH = 40;
 
     /**
      * 返回流程定义的配置
@@ -496,7 +497,7 @@ public class WarmFlowService {
             FlowEngine.dataFillHandler().idFill(form);
         }
         Long draftId = ensureDraftId(form);
-        form.setFormCode(buildDraftFormCode(draftId));
+        form.setFormCode(resolveDraftFormCode(formContent, draftId));
         form.setFormName(resolveDraftFormName(formContent, draftId));
         form.setFormType(0);
         form.setIsPublish(0);
@@ -516,6 +517,28 @@ public class WarmFlowService {
 
     static String buildDraftFormCode(Long draftId) {
         return "FORM_" + draftId;
+    }
+
+    static String resolveDraftFormCode(String formContent, Long draftId) {
+        String formName = extractFormName(formContent);
+        String normalizedCode = normalizeFormCode(formName);
+        return StringUtils.isNotEmpty(normalizedCode) ? normalizedCode : buildDraftFormCode(draftId);
+    }
+
+    static String normalizeFormCode(String formName) {
+        if (StringUtils.isEmpty(formName)) {
+            return null;
+        }
+        String code = formName.trim().replaceAll("[^a-zA-Z0-9_]+", "_")
+            .replaceAll("_+", "_")
+            .replaceAll("^_+|_+$", "");
+        if (StringUtils.isEmpty(code)) {
+            return null;
+        }
+        if (Character.isDigit(code.charAt(0))) {
+            code = "FORM_" + code;
+        }
+        return code.length() > FORM_CODE_MAX_LENGTH ? code.substring(0, FORM_CODE_MAX_LENGTH) : code;
     }
 
     static String buildDraftFormName(Long draftId) {

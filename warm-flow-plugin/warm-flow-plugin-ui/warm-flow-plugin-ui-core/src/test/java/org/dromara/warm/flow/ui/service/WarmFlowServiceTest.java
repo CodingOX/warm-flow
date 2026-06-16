@@ -47,6 +47,22 @@ public class WarmFlowServiceTest {
     }
 
     @Test
+    public void shouldNormalizeReadableFormCodeFromFormName() {
+        Assert.assertEquals("leave_form_1", WarmFlowService.normalizeFormCode("leave_form_1"));
+        Assert.assertEquals("leave_form_1", WarmFlowService.normalizeFormCode(" leave-form 1 "));
+    }
+
+    @Test
+    public void shouldPrefixFormCodeWhenStartsWithDigit() {
+        Assert.assertEquals("FORM_2026_leave", WarmFlowService.normalizeFormCode("2026_leave"));
+    }
+
+    @Test
+    public void shouldLimitFormCodeLength() {
+        Assert.assertEquals(40, WarmFlowService.normalizeFormCode("abcdefghijklmnopqrstuvwxyz_1234567890_extra").length());
+    }
+
+    @Test
     public void shouldBuildDraftFormNameFromDraftId() {
         Assert.assertEquals("未命名表单_123", WarmFlowService.buildDraftFormName(123L));
     }
@@ -80,5 +96,6 @@ public class WarmFlowServiceTest {
         };
 
         Assert.assertEquals("leave_form_1", WarmFlowService.resolveDraftFormName("{\"option\":{\"formName\":\"leave_form_1\"}}", 123L));
+        Assert.assertEquals("leave_form_1", WarmFlowService.resolveDraftFormCode("{\"option\":{\"formName\":\"leave_form_1\"}}", 123L));
     }
 }
