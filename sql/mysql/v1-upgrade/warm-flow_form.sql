@@ -10,7 +10,9 @@ CREATE TABLE `flow_form` (
                              `form_content` longtext NULL DEFAULT NULL COMMENT '表单内容',
                              `ext`          varchar(400) NULL DEFAULT NULL COMMENT '表单扩展，用户自行使用',
                              `create_time`  datetime NULL DEFAULT NULL COMMENT '创建时间',
+                             `create_by`    varchar(64) NULL DEFAULT '' COMMENT '创建人',
                              `update_time`  datetime NULL DEFAULT NULL COMMENT '更新时间',
+                             `update_by`    varchar(64) NULL DEFAULT '' COMMENT '更新人',
                              `del_flag`     char(1) NULL DEFAULT '0' COMMENT '删除标志',
                              `tenant_id`    varchar(40) NULL DEFAULT NULL COMMENT '租户id',
                              PRIMARY KEY (`id`) USING BTREE
