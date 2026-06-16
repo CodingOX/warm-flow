@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Warm-Flow 上帝视角演练台 Mock</title>
+  <style>
+    :root {
+      --bg: #eef3f7;
+      --ink: #172033;
+      --muted: #667085;
+      --panel: rgba(255, 255, 255, 0.82);
+      --line: rgba(33, 48, 73, 0.12);
+      --blue: #2563eb;
+      --blue-soft: #dbeafe;
+      --cyan: #0f766e;
+      --green: #16a34a;
+      --orange: #f97316;
+      --red: #dc2626;
+      --shadow: 0 24px 70px rgba(31, 41, 55, 0.16);
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      font-family: "Fira Sans", "Aptos", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 8% 4%, rgba(37, 99, 235, 0.20), transparent 28%),
+        radial-gradient(circle at 84% 12%, rgba(249, 115, 22, 0.16), transparent 26%),
+        linear-gradient(135deg, #f8fafc 0%, #e5edf5 48%, #dfe8f2 100%);
+    }
+
+    button,
+    select,
+    input,
+    textarea {
+      font: inherit;
+    }
+
+    .shell {
+      width: min(1720px, calc(100vw - 36px));
+      margin: 18px auto;
+      display: grid;
+      grid-template-columns: 340px minmax(540px, 1fr) 420px;
+      gap: 18px;
+    }
+
+    .topbar {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 18px 22px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xl);
+      background: rgba(255, 255, 255, 0.72);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      background:
+        linear-gradient(135deg, rgba(37, 99, 235, 0.95), rgba(15, 118, 110, 0.95)),
+        linear-gradient(45deg, transparent 45%, rgba(255,255,255,0.4) 45% 55%, transparent 55%);
+      box-shadow: 0 16px 36px rgba(37, 99, 235, 0.25);
+      position: relative;
+      flex: 0 0 auto;
+    }
+
+    .brand-mark::before,
+    .brand-mark::after {
+      content: "";
+      position: absolute;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.92);
+    }
+
+    .brand-mark::before {
+      width: 24px;
+      height: 4px;
+      left: 12px;
+      top: 15px;
+      box-shadow: 0 8px 0 rgba(255, 255, 255, 0.92), 0 16px 0 rgba(255, 255, 255, 0.92);
+    }
+
+    .brand-mark::after {
+      width: 7px;
+      height: 7px;
+      right: 10px;
+      top: 23px;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: clamp(24px, 2vw, 34px);
+      letter-spacing: -0.04em;
+      line-height: 1.06;
+    }
+
+    .subtitle {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .mode-banner {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border: 1px solid rgba(249, 115, 22, 0.30);
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(255, 247, 237, 0.98), rgba(255, 255, 255, 0.74));
+      color: #9a3412;
+      max-width: 560px;
+    }
+
+    .mode-banner svg {
+      flex: 0 0 auto;
+    }
+
+    .panel {
+      min-height: calc(100vh - 128px);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xl);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+      overflow: hidden;
+    }
+
+    .panel-pad {
+      padding: 18px;
+    }
+
+    .panel-head {
+      padding: 18px 18px 14px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.54);
+    }
+
+    .panel-head h2 {
+      font-size: 15px;
+      letter-spacing: 0.02em;
+    }
+
+    .panel-head p {
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .metric {
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.70);
+    }
+
+    .metric strong {
+      display: block;
+      font-family: "Fira Code", "SFMono-Regular", monospace;
+      font-size: 22px;
+      letter-spacing: -0.05em;
+    }
+
+    .metric span {
+      display: block;
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .field {
+      margin-top: 14px;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 7px;
+      color: #475467;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .select,
+    .input,
+    .textarea {
+      width: 100%;
+      border: 1px solid rgba(33, 48, 73, 0.15);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.78);
+      color: var(--ink);
+      outline: 0;
+      transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    }
+
+    .select,
+    .input {
+      height: 44px;
+      padding: 0 12px;
+    }
+
+    .textarea {
+      min-height: 92px;
+      padding: 12px;
+      resize: vertical;
+    }
+
+    .select:focus,
+    .input:focus,
+    .textarea:focus {
+      border-color: rgba(37, 99, 235, 0.72);
+      background: #fff;
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+    }
+
+    .button {
+      min-height: 44px;
+      border: 0;
+      border-radius: 14px;
+      padding: 0 14px;
+      cursor: pointer;
+      color: #fff;
+      background: linear-gradient(135deg, var(--blue), #0f766e);
+      font-weight: 800;
+      box-shadow: 0 14px 30px rgba(37, 99, 235, 0.22);
+      transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+    }
+
+    .button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 18px 36px rgba(37, 99, 235, 0.28);
+    }
+
+    .button.secondary {
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid var(--line);
+      box-shadow: none;
+    }
+
+    .button.orange {
+      background: linear-gradient(135deg, #f97316, #dc2626);
+      box-shadow: 0 14px 30px rgba(249, 115, 22, 0.23);
+    }
+
+    .button.ghost {
+      color: var(--blue);
+      background: var(--blue-soft);
+      box-shadow: none;
+    }
+
+    .button-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .def-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .def-card {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 13px;
+      background: rgba(255, 255, 255, 0.66);
+      cursor: pointer;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .def-card:hover,
+    .def-card.active {
+      transform: translateY(-1px);
+      border-color: rgba(37, 99, 235, 0.40);
+      background: rgba(219, 234, 254, 0.76);
+    }
+
+    .def-card strong {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 14px;
+    }
+
+    .def-card small {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 24px;
+      border-radius: 999px;
+      padding: 0 9px;
+      color: #1e40af;
+      background: rgba(219, 234, 254, 0.9);
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .tag.green {
+      color: #166534;
+      background: #dcfce7;
+    }
+
+    .tag.orange {
+      color: #9a3412;
+      background: #ffedd5;
+    }
+
+    .chart-wrap {
+      padding: 18px;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      gap: 14px;
+      height: calc(100vh - 128px);
+    }
+
+    .chart-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.66);
+    }
+
+    .chart-title strong {
+      display: block;
+      font-size: 18px;
+      letter-spacing: -0.03em;
+    }
+
+    .chart-title span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-family: "Fira Code", monospace;
+      font-size: 12px;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #475467;
+      font-size: 12px;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: var(--blue);
+    }
+
+    .dot.done {
+      background: var(--green);
+    }
+
+    .dot.wait {
+      background: #98a2b3;
+    }
+
+    .dot.current {
+      background: var(--orange);
+    }
+
+    .canvas {
+      position: relative;
+      border: 1px solid var(--line);
+      border-radius: 26px;
+      background:
+        linear-gradient(rgba(37, 99, 235, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(37, 99, 235, 0.06) 1px, transparent 1px),
+        rgba(255, 255, 255, 0.62);
+      background-size: 28px 28px;
+      overflow: hidden;
+    }
+
+    .flow {
+      position: absolute;
+      inset: 42px 34px 36px;
+      display: grid;
+      grid-template-columns: repeat(5, minmax(120px, 1fr));
+      grid-template-rows: 1fr 1fr 1fr;
+      gap: 22px;
+      align-items: center;
+    }
+
+    .node {
+      position: relative;
+      min-height: 94px;
+      border: 1px solid rgba(33, 48, 73, 0.12);
+      border-radius: 22px;
+      padding: 14px;
+      background: rgba(255, 255, 255, 0.86);
+      box-shadow: 0 12px 34px rgba(31, 41, 55, 0.10);
+    }
+
+    .node::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      right: -25px;
+      width: 28px;
+      height: 2px;
+      background: rgba(37, 99, 235, 0.34);
+    }
+
+    .node.end::after,
+    .node.branch::after {
+      display: none;
+    }
+
+    .node.done {
+      border-color: rgba(22, 163, 74, 0.32);
+      background: linear-gradient(180deg, rgba(240, 253, 244, 0.95), rgba(255, 255, 255, 0.88));
+    }
+
+    .node.current {
+      border-color: rgba(249, 115, 22, 0.55);
+      background: linear-gradient(180deg, rgba(255, 247, 237, 0.98), rgba(255, 255, 255, 0.90));
+      box-shadow: 0 18px 38px rgba(249, 115, 22, 0.16);
+    }
+
+    .node.wait {
+      color: #667085;
+      background: rgba(255, 255, 255, 0.62);
+    }
+
+    .node.branch {
+      grid-column: 3 / 4;
+      grid-row: 2 / 3;
+      width: 116px;
+      min-height: 116px;
+      justify-self: center;
+      transform: rotate(45deg);
+      border-radius: 24px;
+      background: linear-gradient(135deg, #fff7ed, #eff6ff);
+    }
+
+    .node.branch > div {
+      transform: rotate(-45deg);
+      text-align: center;
+      margin-top: 18px;
+    }
+
+    .node.manager {
+      grid-column: 4 / 5;
+      grid-row: 1 / 2;
+    }
+
+    .node.finance {
+      grid-column: 4 / 5;
+      grid-row: 3 / 4;
+    }
+
+    .node.end {
+      grid-column: 5 / 6;
+      grid-row: 2 / 3;
+    }
+
+    .node .code {
+      margin-top: 8px;
+      color: var(--muted);
+      font-family: "Fira Code", monospace;
+      font-size: 11px;
+    }
+
+    .node strong {
+      display: block;
+      font-size: 15px;
+    }
+
+    .node small {
+      display: block;
+      margin-top: 8px;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    .skip-note {
+      position: absolute;
+      left: 42%;
+      top: 27%;
+      padding: 8px 10px;
+      border: 1px dashed rgba(249, 115, 22, 0.45);
+      border-radius: 999px;
+      background: rgba(255, 247, 237, 0.92);
+      color: #9a3412;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .iframe-shell {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-height: 0;
+      border: 1px solid var(--line);
+      border-radius: 26px;
+      background: rgba(255, 255, 255, 0.62);
+      overflow: hidden;
+    }
+
+    .iframe-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(248, 250, 252, 0.82);
+      color: #475467;
+      font-size: 12px;
+    }
+
+    .iframe-url {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-family: "Fira Code", "SFMono-Regular", monospace;
+      color: #1d4ed8;
+    }
+
+    .preview-frame {
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      border: 0;
+      background: #fff;
+    }
+
+    .form-frame-shell {
+      height: 320px;
+      margin-top: 14px;
+    }
+
+    .state-card {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .state-row {
+      display: grid;
+      gap: 12px;
+      padding: 10px 11px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.62);
+      font-size: 13px;
+      min-width: 0;
+    }
+
+    .state-row.identity {
+      grid-column: 1 / -1;
+      grid-template-columns: auto 1fr;
+      align-items: center;
+    }
+
+    .state-row span:first-child {
+      color: var(--muted);
+    }
+
+    .mono {
+      font-family: "Fira Code", "SFMono-Regular", monospace;
+      font-size: 12px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .tab {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      min-height: 40px;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.68);
+      color: #475467;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .tab.active {
+      border-color: rgba(37, 99, 235, 0.40);
+      background: var(--blue-soft);
+      color: #1d4ed8;
+    }
+
+    .form-preview {
+      margin-top: 14px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.62);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .action-stack {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .action-stack .button:first-child {
+      grid-column: 1 / -1;
+    }
+
+    .preview-option {
+      position: relative;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-top: 10px;
+      padding: 10px 11px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(248, 250, 252, 0.70);
+      color: #475467;
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .preview-option input {
+      width: 18px;
+      height: 18px;
+      margin: 1px 0 0;
+      accent-color: var(--blue);
+      flex: 0 0 auto;
+    }
+
+    .preview-option strong {
+      display: block;
+      margin-bottom: 2px;
+      color: var(--ink);
+      font-size: 13px;
+    }
+
+    .help-tip {
+      position: absolute;
+      top: 10px;
+      right: 11px;
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      font-size: 12px;
+      font-weight: 900;
+      line-height: 1;
+      cursor: help;
+      box-shadow: 0 10px 22px rgba(220, 38, 38, 0.22);
+    }
+
+    .help-tip::before {
+      content: "?";
+    }
+
+    .help-pop {
+      position: absolute;
+      right: 0;
+      top: 30px;
+      width: 280px;
+      padding: 11px 12px;
+      border: 1px solid rgba(220, 38, 38, 0.22);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: 0 18px 40px rgba(31, 41, 55, 0.16);
+      color: #475467;
+      font-size: 12px;
+      line-height: 1.6;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(6px);
+      transition: opacity 0.18s ease, transform 0.18s ease;
+      z-index: 2;
+    }
+
+    .help-pop strong {
+      display: block;
+      margin-bottom: 4px;
+      color: #b42318;
+      font-size: 13px;
+    }
+
+    .help-tip:hover + .help-pop,
+    .help-tip:focus-visible + .help-pop {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+
+    .log {
+      max-height: 150px;
+      overflow: auto;
+      display: grid;
+      gap: 8px;
+      margin-top: 14px;
+      padding-right: 4px;
+    }
+
+    .log-line {
+      padding: 10px 11px;
+      border-left: 3px solid var(--blue);
+      border-radius: 12px;
+      background: rgba(248, 250, 252, 0.72);
+      color: #475467;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .log-line strong {
+      color: var(--ink);
+    }
+
+    .chart-log {
+      max-height: 148px;
+      margin-top: 0;
+      padding-right: 4px;
+    }
+
+    .right-panel .panel-pad {
+      display: grid;
+      gap: 12px;
+    }
+
+    .right-panel .form-frame-shell,
+    .right-panel .form-preview {
+      margin-top: 0;
+    }
+
+    .right-panel .textarea {
+      min-height: 68px;
+    }
+
+    @media (max-width: 1280px) {
+      .shell {
+        grid-template-columns: 320px 1fr;
+      }
+
+      .right-panel {
+        grid-column: 1 / -1;
+        min-height: auto;
+      }
+
+      .chart-wrap {
+        height: 760px;
+      }
+
+      .chart-log {
+        max-height: 172px;
+      }
+    }
+
+    @media (max-width: 860px) {
+      .shell {
+        width: min(100vw - 20px, 760px);
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .panel {
+        min-height: auto;
+      }
+
+      .chart-wrap {
+        height: 720px;
+      }
+
+      .flow {
+        position: static;
+        display: grid;
+        grid-template-columns: 1fr;
+        padding: 18px;
+      }
+
+      .canvas {
+        overflow: auto;
+      }
+
+      .node,
+      .node.branch,
+      .node.manager,
+      .node.finance,
+      .node.end {
+        grid-column: auto;
+        grid-row: auto;
+        width: auto;
+        transform: none;
+      }
+
+      .node.branch > div {
+        transform: none;
+        margin-top: 0;
+      }
+
+      .node::after,
+      .skip-note {
+        display: none;
+      }
+
+      .form-frame-shell {
+        height: 440px;
+      }
+
+      .state-card,
+      .action-stack {
+        grid-template-columns: 1fr;
+      }
+
+      .action-stack .button:first-child,
+      .state-row.identity {
+        grid-column: auto;
+      }
+
+      .help-pop {
+        right: 6px;
+        width: min(280px, calc(100vw - 72px));
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true"></div>
+        <div>
+          <h1>Warm-Flow 上帝视角演练台</h1>
+          <p class="subtitle">用于配置人员真实走完流程：看定义、看节点、填表单、跳转、刷新运行态流程图。</p>
+        </div>
+      </div>
+      <div class="mode-banner">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 3L20 7V12C20 16.8 16.6 20.7 12 21C7.4 20.7 4 16.8 4 12V7L12 3Z" stroke="#ea580c" stroke-width="2"/>
+          <path d="M12 8V12" stroke="#ea580c" stroke-width="2" stroke-linecap="round"/>
+          <path d="M12 16H12.01" stroke="#ea580c" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+        <div>
+          <strong>God Mode: ignore(true)</strong>
+          <p>演练提交会写入真实实例/任务/历史，但跳过办理人权限校验。</p>
+        </div>
+      </div>
+    </header>
+
+    <aside class="panel">
+      <div class="panel-head">
+        <h2>流程配置中心</h2>
+        <p>下拉选择一个已发布 definition，左侧展示数量和版本，右侧联动当前演练实例。</p>
+      </div>
+      <div class="panel-pad">
+        <div class="metric-grid">
+          <div class="metric">
+            <strong id="metricDefs">3</strong>
+            <span>已发布流程</span>
+          </div>
+          <div class="metric">
+            <strong id="metricNodes">6</strong>
+            <span>节点</span>
+          </div>
+          <div class="metric">
+            <strong id="metricSkips">7</strong>
+            <span>Skip</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="definitionSelect">当前流程定义</label>
+          <select id="definitionSelect" class="select">
+            <option value="leave">请假审批 flow_leave v3</option>
+            <option value="purchase">采购审批 flow_purchase v2</option>
+            <option value="seal">用印审批 flow_seal v5</option>
+          </select>
+        </div>
+
+        <div class="button-row">
+          <button class="button" id="startBtn" type="button">发起演练</button>
+          <button class="button secondary" id="previewBtn" type="button">只看定义</button>
+        </div>
+
+        <div class="def-list" id="defList"></div>
+      </div>
+    </aside>
+
+    <section class="panel">
+      <div class="chart-wrap">
+        <div class="chart-toolbar">
+          <div class="chart-title">
+            <strong id="chartName">请假审批</strong>
+            <span id="chartMeta">instanceId=188800010001 · taskId=188800020004 · current=leader_approve</span>
+          </div>
+          <div class="legend">
+            <span><i class="dot done"></i>已完成</span>
+            <span><i class="dot current"></i>当前</span>
+            <span><i class="dot wait"></i>未到达</span>
+          </div>
+        </div>
+
+        <div class="iframe-shell" aria-label="流程图 iframe 示意">
+          <div class="iframe-label">
+            <strong>流程图 iframe</strong>
+            <span class="iframe-url" id="flowFrameUrl">/warm-flow-ui/index.html?type=FlowChart&id=...</span>
+          </div>
+          <iframe id="flowFrame" class="preview-frame" title="流程图 iframe 预览"></iframe>
+        </div>
+
+        <div class="log chart-log" id="log"></div>
+      </div>
+    </section>
+
+    <aside class="panel right-panel">
+      <div class="panel-head">
+        <h2>节点操作与流转</h2>
+        <p>模拟真实运行态：父页面统一控制正常流转；表单 iframe 只负责表单展示、填写和预览。</p>
+      </div>
+      <div class="panel-pad">
+        <div class="state-card">
+          <div class="state-row">
+            <span>当前实例</span>
+            <strong class="mono" id="instanceId">188800010001</strong>
+          </div>
+          <div class="state-row">
+            <span>当前任务</span>
+            <strong class="mono" id="taskId">188800020004</strong>
+          </div>
+          <div class="state-row identity">
+            <span>演练身份</span>
+            <strong class="mono">god-workbench</strong>
+          </div>
+        </div>
+
+        <div class="iframe-shell form-frame-shell" aria-label="表单 iframe 示意">
+          <div class="iframe-label">
+            <strong>表单 iframe</strong>
+            <span class="iframe-url" id="formFrameUrl">/warm-flow-ui/index.html?type=formCreate</span>
+          </div>
+          <iframe id="formFrame" class="preview-frame" title="表单 iframe 预览"></iframe>
+        </div>
+
+        <div class="form-preview">
+          <label class="preview-option" for="showInnerControls">
+            <input id="showInnerControls" type="checkbox" />
+            <span>
+              <strong>显示表单内原始控制按钮（仅预览，不执行）</strong>
+              默认隐藏 iframe 内的提交/下一步按钮；打开后只看整体页面效果，父页面不会接收 iframe 内按钮提交。
+            </span>
+          </label>
+          <span class="help-tip" tabindex="0" aria-label="审批 controls 位置说明"></span>
+          <div class="help-pop" role="note">
+            <strong>审批 controls 的位置说明</strong>
+            正常业务办理时，审批提交、下一步等 controls 放在表单 iframe 内部，由办理页面自己完成提交。
+            当前上帝视角演练台为了统一控制实例、任务、流程图刷新和 ignore(true)，把真实流转按钮外置到父页面执行。
+          </div>
+          <div class="field">
+            <label for="message">流转意见（可选）</label>
+            <textarea id="message" class="textarea">同意，流程配置验证通过。</textarea>
+          </div>
+          <div class="action-stack">
+            <button class="button orange" id="submitBtn" type="button">提交演练：正常流转</button>
+            <button class="button ghost" id="previewCurrentBtn" type="button">预览当前表单</button>
+            <button class="button secondary" id="viewBtn" type="button">刷新两个 iframe</button>
+          </div>
+        </div>
+
+      </div>
+    </aside>
+  </main>
+
+  <script>
+    const definitions = {
+      leave: {
+        name: "请假审批",
+        code: "flow_leave",
+        version: "v3",
+        nodes: 6,
+        skips: 7,
+        current: "leader_approve",
+        cards: [
+          ["发起申请", "start_apply", "申请人填写动态表单", "done", ""],
+          ["主管审批", "leader_approve", "当前待办：leader", "current", ""],
+          ["天数判断", "gateway_days", "formData.days > 3", "branch", ""],
+          ["经理审批", "manager_approve", "超过 3 天进入", "wait", "manager"],
+          ["人事备案", "hr_archive", "归档请假记录", "wait", "finance"],
+          ["流程结束", "end", "生成完成历史", "wait", "end"]
+        ]
+      },
+      purchase: {
+        name: "采购审批",
+        code: "flow_purchase",
+        version: "v2",
+        nodes: 7,
+        skips: 8,
+        current: "dept_review",
+        cards: [
+          ["采购申请", "start_purchase", "填写采购明细", "done", ""],
+          ["部门复核", "dept_review", "当前待办：dept-leader", "current", ""],
+          ["金额网关", "gateway_amount", "amount >= 5000", "branch", ""],
+          ["财务审批", "finance_review", "预算占用检查", "wait", "manager"],
+          ["总经理审批", "boss_review", "大额采购确认", "wait", "finance"],
+          ["流程结束", "end", "采购单归档", "wait", "end"]
+        ]
+      },
+      seal: {
+        name: "用印审批",
+        code: "flow_seal",
+        version: "v5",
+        nodes: 5,
+        skips: 5,
+        current: "risk_review",
+        cards: [
+          ["用印申请", "start_seal", "上传合同与说明", "done", ""],
+          ["风控审核", "risk_review", "当前待办：risk", "current", ""],
+          ["法务审核", "legal_review", "合同条款确认", "wait", "manager"],
+          ["印章管理员", "seal_keeper", "执行用印", "wait", "finance"],
+          ["流程结束", "end", "用印记录归档", "wait", "end"]
+        ]
+      }
+    };
+
+    const logEl = document.getElementById("log");
+    const defListEl = document.getElementById("defList");
+    const selectEl = document.getElementById("definitionSelect");
+    const showInnerControlsEl = document.getElementById("showInnerControls");
+    let currentKey = "leave";
+    let runSeq = 1001;
+    let currentRun = null;
+    let previewSeq = 1;
+
+    function esc(text) {
+      return String(text).replace(/[&<>"]/g, function (m) {
+        return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[m];
+      });
+    }
+
+    function renderDefinitionList() {
+      defListEl.innerHTML = Object.entries(definitions).map(([key, def]) => `
+        <article class="def-card ${key === currentKey ? "active" : ""}" data-key="${key}">
+          <strong>
+            ${esc(def.name)}
+            <span class="tag green">已发布</span>
+          </strong>
+          <small>${esc(def.code)} ${esc(def.version)} · ${def.nodes} nodes · ${def.skips} skips</small>
+        </article>
+      `).join("");
+      defListEl.querySelectorAll(".def-card").forEach(card => {
+        card.addEventListener("click", () => {
+          selectEl.value = card.dataset.key;
+          setDefinition(card.dataset.key);
+        });
+      });
+    }
+
+    function flowFrameHtml(def, run) {
+      const nodesHtml = def.cards.map(card => {
+        const [name, code, desc, status, placement] = card;
+        const classes = ["node", status, placement].filter(Boolean).join(" ");
+        if (status === "branch") {
+          return `<article class="${classes}"><div><strong>${esc(name)}</strong><small>${esc(desc)}</small><div class="code">${esc(code)}</div></div></article>`;
+        }
+        return `<article class="${classes}"><strong>${esc(name)}</strong><small>${esc(desc)}</small><div class="code">${esc(code)}</div></article>`;
+      }).join("");
+      return `
+        <!DOCTYPE html>
+        <html lang="zh-CN">
+        <head>
+          <meta charset="UTF-8" />
+          <style>
+            body { margin: 0; min-height: 100vh; font-family: "PingFang SC", "Microsoft YaHei", sans-serif; color: #172033; background:
+              linear-gradient(rgba(37,99,235,.06) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(37,99,235,.06) 1px, transparent 1px), #fff; background-size: 28px 28px; }
+            .meta { position: sticky; top: 0; z-index: 2; display: flex; justify-content: space-between; gap: 12px; padding: 12px 16px; background: rgba(255,255,255,.92); border-bottom: 1px solid rgba(33,48,73,.12); }
+            .meta strong { display: block; font-size: 15px; }
+            .meta span { display: block; margin-top: 3px; color: #667085; font-family: monospace; font-size: 12px; }
+            .flow { min-width: 760px; min-height: 460px; padding: 46px 34px 36px; display: grid; grid-template-columns: repeat(5, minmax(120px, 1fr)); grid-template-rows: 1fr 1fr 1fr; gap: 22px; align-items: center; }
+            .node { position: relative; min-height: 94px; border: 1px solid rgba(33,48,73,.12); border-radius: 22px; padding: 14px; background: rgba(255,255,255,.9); box-shadow: 0 12px 34px rgba(31,41,55,.10); }
+            .node::after { content: ""; position: absolute; top: 50%; right: -25px; width: 28px; height: 2px; background: rgba(37,99,235,.34); }
+            .node.end::after, .node.branch::after { display: none; }
+            .done { border-color: rgba(22,163,74,.32); background: linear-gradient(180deg,#f0fdf4,#fff); }
+            .current { border-color: rgba(249,115,22,.55); background: linear-gradient(180deg,#fff7ed,#fff); box-shadow: 0 18px 38px rgba(249,115,22,.16); }
+            .wait { color: #667085; background: rgba(255,255,255,.66); }
+            .branch { grid-column: 3 / 4; grid-row: 2 / 3; width: 116px; min-height: 116px; justify-self: center; transform: rotate(45deg); border-radius: 24px; background: linear-gradient(135deg,#fff7ed,#eff6ff); }
+            .branch > div { transform: rotate(-45deg); text-align: center; margin-top: 18px; }
+            .manager { grid-column: 4 / 5; grid-row: 1 / 2; }
+            .finance { grid-column: 4 / 5; grid-row: 3 / 4; }
+            .end { grid-column: 5 / 6; grid-row: 2 / 3; }
+            strong { display: block; font-size: 15px; }
+            small { display: block; margin-top: 8px; color: #667085; line-height: 1.35; }
+            .code { margin-top: 8px; color: #667085; font-family: monospace; font-size: 11px; }
+          </style>
+        </head>
+        <body>
+          <div class="meta">
+            <div><strong>${esc(def.name)} - FlowChart iframe</strong><span>instanceId=${esc(run.instanceId)} · current=${esc(run.currentNodeCode)}</span></div>
+            <div><span>真实地址: type=FlowChart&id=${esc(run.instanceId)}</span></div>
+          </div>
+          <div class="flow">${nodesHtml}</div>
+        </body>
+        </html>`;
+    }
+
+    function formFrameHtml(def, run) {
+      const controlsHtml = run.showInnerControls
+        ? `
+            <div class="controls-preview">
+              <button type="button">提交</button>
+              <button type="button">下一步</button>
+              <button type="button">审批通过</button>
+            </div>`
+        : "";
+      return `
+        <!DOCTYPE html>
+        <html lang="zh-CN">
+        <head>
+          <meta charset="UTF-8" />
+          <style>
+            body { margin: 0; font-family: "PingFang SC", "Microsoft YaHei", sans-serif; color: #172033; background: #fff; }
+            .wrap { padding: 16px; }
+            .meta { padding: 12px 14px; border: 1px solid #e5e7eb; border-radius: 16px; background: #f8fafc; }
+            .meta strong { display: block; font-size: 15px; }
+            .meta span { display: block; margin-top: 4px; color: #667085; font-family: monospace; font-size: 12px; }
+            .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+            label { display: block; margin-bottom: 6px; color: #475467; font-size: 12px; font-weight: 700; }
+            input, textarea { width: 100%; box-sizing: border-box; border: 1px solid #d0d5dd; border-radius: 12px; padding: 10px 12px; font: inherit; }
+            textarea { min-height: 86px; resize: vertical; }
+            .hint { margin-top: 14px; padding: 10px 12px; border-radius: 14px; color: #9a3412; background: #fff7ed; font-size: 12px; line-height: 1.6; }
+            .controls-preview { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; padding: 12px; border: 1px dashed #f97316; border-radius: 14px; background: #fff7ed; }
+            .controls-preview button { min-height: 36px; border: 0; border-radius: 10px; padding: 0 12px; color: #fff; background: #2563eb; font-weight: 700; }
+            .preview-pulse { animation: pulse 900ms ease-out 1; }
+            @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(37,99,235,.32); } 100% { box-shadow: 0 0 0 12px rgba(37,99,235,0); } }
+          </style>
+        </head>
+        <body>
+          <div class="wrap">
+            <div class="meta">
+              <strong>${esc(def.name)} - formCreate iframe</strong>
+              <span>由父页面 postMessage 初始化：taskId=${esc(run.taskId)} · type=0 · godMode=true</span>
+            </div>
+            <div class="grid">
+              <div>
+                <label>业务字段 A</label>
+                <input value="${def.code === "flow_leave" ? "请假 5 天" : "测试数据"}" />
+              </div>
+              <div>
+                <label>当前节点</label>
+                <input value="${esc(run.currentNodeCode)}" />
+              </div>
+            </div>
+            <div style="margin-top: 12px;">
+              <label>表单内容</label>
+              <textarea class="${run.previewMarker ? "preview-pulse" : ""}">这里模拟动态表单 iframe 内部的 form-create 表单。点击“预览当前表单”只会重新渲染当前表单数据，不推进流程，不改变 taskId。</textarea>
+            </div>
+            ${controlsHtml}
+            <div class="hint">
+              上帝模式提交按钮放在父页面。iframe 内原始控制按钮如果显示，也只是视觉预览，点击不执行流转。
+            </div>
+          </div>
+        </body>
+        </html>`;
+    }
+
+    function setDefinition(key) {
+      currentKey = key;
+      const def = definitions[key];
+      document.getElementById("metricNodes").textContent = def.nodes;
+      document.getElementById("metricSkips").textContent = def.skips;
+      document.getElementById("chartName").textContent = def.name;
+      if (!currentRun || currentRun.defKey !== key) {
+        currentRun = null;
+        document.getElementById("chartMeta").textContent = "尚未发起演练实例";
+        document.getElementById("instanceId").textContent = "未发起";
+        document.getElementById("taskId").textContent = "未发起";
+        document.getElementById("flowFrameUrl").textContent = "/warm-flow-ui/index.html?type=FlowChart&id=...";
+        document.getElementById("formFrameUrl").textContent = "/warm-flow-ui/index.html?type=formCreate";
+        document.getElementById("flowFrame").srcdoc = emptyFrameHtml("流程图 iframe 等待发起实例", "点击左侧“发起演练”后，父页面会拿到新的 instanceId 并刷新这里。");
+        document.getElementById("formFrame").srcdoc = emptyFrameHtml("表单 iframe 等待当前任务", "发起实例后，父页面会通过 postMessage 发送 taskId 初始化表单。");
+      } else {
+        renderRun();
+      }
+      renderDefinitionList();
+      addLog(`切换流程定义：<strong>${esc(def.name)}</strong>，已加载 ${def.nodes} 个节点和 ${def.skips} 条 skip。`);
+    }
+
+    function emptyFrameHtml(title, text) {
+      return `
+        <!DOCTYPE html>
+        <html lang="zh-CN">
+        <head><meta charset="UTF-8" /><style>
+          body { margin: 0; min-height: 100vh; display: grid; place-items: center; font-family: "PingFang SC", "Microsoft YaHei", sans-serif; color: #475467; background: #fff; }
+          div { max-width: 420px; padding: 24px; text-align: center; }
+          strong { display: block; color: #172033; font-size: 18px; }
+          p { margin: 10px 0 0; line-height: 1.7; }
+        </style></head>
+        <body><div><strong>${esc(title)}</strong><p>${esc(text)}</p></div></body>
+        </html>`;
+    }
+
+    function newRun(defKey) {
+      const def = definitions[defKey];
+      const suffix = String(runSeq++).padStart(4, "0");
+      return {
+        defKey,
+        defId: `def_${def.code}`,
+        instanceId: `mock_ins_${Date.now()}_${suffix}`,
+        taskId: `mock_task_${Date.now()}_${suffix}`,
+        currentNodeCode: def.current,
+        status: "RUNNING",
+        showInnerControls: false,
+        previewMarker: 0
+      };
+    }
+
+    function renderRun() {
+      const def = definitions[currentRun.defKey];
+      const flowUrl = `/warm-flow-ui/index.html?type=FlowChart&id=${currentRun.instanceId}`;
+      const formUrl = "/warm-flow-ui/index.html?type=formCreate";
+      document.getElementById("chartMeta").textContent = `instanceId=${currentRun.instanceId} · taskId=${currentRun.taskId} · current=${currentRun.currentNodeCode}`;
+      document.getElementById("instanceId").textContent = currentRun.instanceId;
+      document.getElementById("taskId").textContent = currentRun.taskId;
+      document.getElementById("flowFrameUrl").textContent = flowUrl;
+      document.getElementById("formFrameUrl").textContent = `${formUrl} + postMessage(taskId=${currentRun.taskId})`;
+      document.getElementById("flowFrame").srcdoc = flowFrameHtml(def, currentRun);
+      document.getElementById("formFrame").srcdoc = formFrameHtml(def, currentRun);
+    }
+
+    function addLog(html) {
+      const line = document.createElement("div");
+      line.className = "log-line";
+      line.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong> · ${html}`;
+      logEl.prepend(line);
+    }
+
+    selectEl.addEventListener("change", event => setDefinition(event.target.value));
+    showInnerControlsEl.addEventListener("change", () => {
+      if (!currentRun) {
+        addLog("请先发起演练实例，再预览表单内原始控制按钮。");
+        showInnerControlsEl.checked = false;
+        return;
+      }
+      currentRun.showInnerControls = showInnerControlsEl.checked;
+      renderRun();
+      addLog(showInnerControlsEl.checked
+        ? "已显示表单内原始控制按钮：仅视觉预览，不接收 iframe 内提交。"
+        : "已隐藏表单内原始控制按钮：回到上帝演示默认形态。");
+    });
+    document.getElementById("startBtn").addEventListener("click", () => {
+      currentRun = newRun(currentKey);
+      showInnerControlsEl.checked = false;
+      renderRun();
+      addLog(`发起真实演练实例：后端返回新的 instanceId=<strong>${currentRun.instanceId}</strong>，taskId=<strong>${currentRun.taskId}</strong>。`);
+    });
+    document.getElementById("previewBtn").addEventListener("click", () => {
+      addLog("进入只读定义预览：不创建 instance，不写 task/history。");
+    });
+    document.getElementById("viewBtn").addEventListener("click", () => {
+      if (!currentRun) {
+        addLog("请先发起演练实例，再刷新 iframe。");
+        return;
+      }
+      renderRun();
+      addLog(`父页面刷新两个 iframe：FlowChart 使用 instanceId=<strong>${currentRun.instanceId}</strong>，formCreate 使用 taskId=<strong>${currentRun.taskId}</strong>。`);
+    });
+    document.getElementById("submitBtn").addEventListener("click", () => {
+      if (!currentRun) {
+        addLog("请先发起演练实例，再提交上帝模式流转。");
+        return;
+      }
+      currentRun.taskId = `mock_task_${Date.now()}_${String(runSeq++).padStart(4, "0")}`;
+      renderRun();
+      addLog(`正常流转：父页面获取 iframe formData 后调用上帝接口，后端使用 FlowParams.ignore(true)，返回新的 taskId=<strong>${currentRun.taskId}</strong>。`);
+    });
+    document.getElementById("previewCurrentBtn").addEventListener("click", () => {
+      if (!currentRun) {
+        addLog("请先发起演练实例，再预览当前表单。");
+        return;
+      }
+      currentRun.previewMarker = previewSeq++;
+      renderRun();
+      addLog(`预览当前表单：只重新渲染 iframe 表单数据，不调用 taskService.skip，instanceId/taskId 保持不变。`);
+    });
+
+    renderDefinitionList();
+    setDefinition(currentKey);
+    addLog("静态 Mock 已加载：当前示例使用请假审批测试数据。");
+  </script>
+</body>
+</html>
