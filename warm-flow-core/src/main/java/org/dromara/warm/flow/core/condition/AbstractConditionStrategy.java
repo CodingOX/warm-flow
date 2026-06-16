@@ -39,7 +39,7 @@ public abstract class AbstractConditionStrategy implements ConditionStrategy {
      */
     public void preEval(String name, Map<String, Object> variable) {
         AssertUtil.isEmpty(variable, ExceptionCons.NULL_CONDITION_VALUE);
-        Object o = variable.get(name);
+        Object o = getVariableValue(name, variable);
         AssertUtil.isNull(o, ExceptionCons.NULL_CONDITION_VALUE);
     }
 
@@ -55,9 +55,27 @@ public abstract class AbstractConditionStrategy implements ConditionStrategy {
     @Override
     public Boolean eval(String expression, Map<String, Object> variable) {
         String[] split = expression.split(FlowCons.SPLIT_VERTICAL);
-        preEval(split[0].trim(), variable);
-        String variableValue = String.valueOf(variable.get(split[0].trim()));
+        String variableName = split[0].trim();
+        preEval(variableName, variable);
+        String variableValue = String.valueOf(getVariableValue(variableName, variable));
         return afterEval(split[1].trim(), variableValue);
+    }
+
+    /**
+     * 支持 formData.leaveDays 这类点路径变量，动态表单字段会统一放在 formData Map 下。
+     */
+    private Object getVariableValue(String name, Map<String, Object> variable) {
+        if (variable.containsKey(name)) {
+            return variable.get(name);
+        }
+        Object value = variable;
+        for (String key : name.split("\\.")) {
+            if (!(value instanceof Map)) {
+                return null;
+            }
+            value = ((Map<?, ?>) value).get(key);
+        }
+        return value;
     }
 
     /**
