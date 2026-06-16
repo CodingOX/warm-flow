@@ -93,7 +93,7 @@
 
         <!-- orm库版本 -->
         <mybatis-spring-boot>2.3.2</mybatis-spring-boot>
-        <mybatis.version>3.5.15</mybatis.version>
+        <mybatis.version>3.5.19</mybatis.version>
         <mybatis-plus.version>3.5.12</mybatis-plus.version>
         <easy-query.version>3.1.79</easy-query.version>
 
