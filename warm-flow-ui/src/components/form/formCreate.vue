@@ -78,6 +78,7 @@ async function formInit(data) {
   taskId.value = data.taskId;
   // type 来源：0待办-办理 1已办-流程历史记录 2已发布的表单设计
   if (data.type === "0") {
+    showApprovalFields.value = true;
     reset();
     response = await executeLoad(data.taskId);
     if (!response.data) proxy.$modal.alertWarning("待办任务不存在");
