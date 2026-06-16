@@ -1,0 +1,21 @@
+# Warm-Flow Visual Demo Checklist
+
+- [ ] 创建 MySQL 数据库 `warm_flow_demo`
+- [ ] 执行 `sql/mysql/warm-flow-all.sql`
+- [ ] 启动 `warm-flow-demo-app`
+- [ ] 打开表单设计器并创建发起动态表单
+- [ ] 发起动态表单包含正整数 `leaveDays`
+- [ ] 创建主管动态表单，至少包含 1 个意见字段
+- [ ] 创建经理动态表单，至少包含 1 个意见字段
+- [ ] 三份动态表单均发布
+- [ ] 打开流程设计器创建请假流程
+- [ ] 发起、主管、经理节点分别绑定对应动态表单
+- [ ] 分支条件使用 `default@@${formData.leaveDays > 3}`
+- [ ] `leaveDays = 2` 进入主管审批节点
+- [ ] `leaveDays = 5` 进入经理审批节点
+- [ ] 主管审批页展示发起表单只读、主管表单可写
+- [ ] 经理审批页展示发起表单只读、经理表单可写
+- [ ] 打开 `/demo/workbench`
+- [ ] 宿主页日志能看到 `formInit`
+- [ ] 宿主页能向 iframe 回传 `taskId` / `formId` / `type` / `disabled`
+- [ ] 表单提交后宿主页日志能看到 `submitSuccess`
