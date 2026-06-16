@@ -16,12 +16,21 @@
     return '/warm-flow-ui/index.html?type=formCreate';
   }
 
+  function resolveMode() {
+    // 申请人视角属于业务发起/查看语义，不应复用审批人待办办理模式。
+    if (actorEl.value === 'applicant' && modeEl.value === '0') {
+      return '3';
+    }
+    return modeEl.value;
+  }
+
   function buildInitPayload() {
+    const resolvedMode = resolveMode();
     return {
       taskId: taskIdEl.value.trim(),
       formId: formIdEl.value.trim(),
-      type: modeEl.value,
-      disabled: modeEl.value !== '0'
+      type: resolvedMode,
+      disabled: resolvedMode !== '0'
     };
   }
 
@@ -31,7 +40,7 @@
       method: 'formInit',
       data: payload
     }, '*');
-    log(`发送初始化: actor=${actorEl.value}, payload=${JSON.stringify(payload)}`);
+    log(`发送初始化: actor=${actorEl.value}, mode=${modeEl.value}, payload=${JSON.stringify(payload)}`);
   }
 
   openFrameButton.addEventListener('click', () => {
@@ -121,11 +130,11 @@
       const { taskId, instanceId } = body.data;
       log(`流程已发起: instanceId=${instanceId}, taskId=${taskId}`);
 
-      // 自动填充 taskId，切换到待办办理模式，打开 iframe
+      // 自动填充 taskId，申请人默认以“申请人查看”模式打开，避免看到审批区。
       taskIdEl.value = taskId;
-      modeEl.value = '0';
+      modeEl.value = actorEl.value === 'applicant' ? '3' : '0';
       iframe.src = formCreateUrl();
-      log(`自动打开待办: taskId=${taskId}`);
+      log(`自动打开表单: taskId=${taskId}, resolvedMode=${resolveMode()}`);
     } catch (e) {
       log(`发起流程出错: ${e.message}`);
     } finally {

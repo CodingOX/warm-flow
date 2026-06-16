@@ -25,7 +25,8 @@ import formCreate from "@form-create/element-ui";
 const { proxy } = getCurrentInstance();
 const disabled = ref(false);
 const fApi = ref(null);
-const showApprovalFields = ref(true); // 控制审批意见和按钮是否显示
+// 运行态壳层自行决定是否显示审批意见区；它不属于 form-create 的业务表单 schema。
+const showApprovalFields = ref(true);
 const taskId = ref("");
 const message = ref("");
 const data = reactive({
@@ -76,10 +77,19 @@ async function formInit(data) {
   let response;
   let formContent;
   taskId.value = data.taskId;
-  // type 来源：0待办-办理 1已办-流程历史记录 2已发布的表单设计
+  // type 来源：
+  // 0 = 待办办理（审批人）
+  // 1 = 已办历史
+  // 2 = 已发布表单预览
+  // 3 = 申请人视角（沿用任务数据加载，但不显示审批意见和审批动作）
   if (data.type === "0") {
     showApprovalFields.value = true;
     reset();
+    response = await executeLoad(data.taskId);
+    if (!response.data) proxy.$modal.alertWarning("待办任务不存在");
+    formContent = JSON.parse(response.data.form?.formContent);
+  } else if (data.type === "3") {
+    showApprovalFields.value = false;
     response = await executeLoad(data.taskId);
     if (!response.data) proxy.$modal.alertWarning("待办任务不存在");
     formContent = JSON.parse(response.data.form?.formContent);

@@ -80,7 +80,7 @@ yarn dev
        data: {
          taskId: "任务ID",
          formId: "表单ID",
-         type: "0",      // 0:待办办理, 1:已办历史, 2:已发布表单预览
+         type: "0",      // 0:待办办理, 1:已办历史, 2:已发布表单预览, 3:申请人查看
          disabled: false // 是否禁用表单输入
        }
      }, "*");
@@ -91,4 +91,3 @@ yarn dev
   window.parent.postMessage({ method: "submitSuccess" }, "*");
   ```
   父页面收到此消息后应执行刷新待办列表、关闭弹窗等收尾工作。
-
