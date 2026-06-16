@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>多节点自定义业务表单流转模拟器</title>
+  <!-- 引入 Element Plus CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-plus/dist/index.css">
+  <!-- 引入 Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: radial-gradient(circle at top left, rgba(244, 247, 254, 0.6) 0%, rgba(248, 250, 252, 1) 100%);
+      min-height: 100vh;
+    }
+    .browser-shadow {
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08), 0 10px 20px -10px rgba(0, 0, 0, 0.06);
+    }
+    .step-active {
+      color: #3b82f6 !important;
+      font-weight: 600;
+    }
+    /* 模拟状态微章 */
+    .permission-badge {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+    .badge-writable { background-color: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; }
+    .badge-readonly { background-color: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; }
+    .badge-hidden { background-color: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; }
+  </style>
+</head>
+<body class="p-6 md:p-10 bg-slate-50">
+  <div id="app" class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <header class="mb-8">
+      <div class="flex items-center gap-3">
+        <span class="px-3 py-1 text-xs font-semibold text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-full">业务流转仿真</span>
+        <h1 class="text-3xl font-bold text-slate-800 tracking-tight">多节点自定义表单流转模拟器</h1>
+      </div>
+      <p class="text-slate-500 mt-1 text-sm">直观呈现工作流在 3 个不同审批节点上，自定义业务表单的<strong>可见性、可编辑性、及数据追溯机制</strong>。</p>
+    </header>
+
+    <!-- 流程节点步骤条 -->
+    <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm mb-8">
+      <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">流程当前所处节点控制 (请点击切换测试)：</div>
+      <el-steps :active="currentStep" finish-status="success" align-center class="cursor-pointer">
+        <el-step title="节点一：员工申请" description="填写请假基础信息" @click="goToStep(0)"></el-step>
+        <el-step title="节点二：经理审批" description="只读查看节点一，填写经理补充" @click="goToStep(1)"></el-step>
+        <el-step title="节点三：HR确认" description="只读查看一与二，填写HR归档项" @click="goToStep(2)"></el-step>
+        <el-step title="流程结束" description="所有表单内容均归档只读" @click="goToStep(3)"></el-step>
+      </el-steps>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <!-- 左栏：节点状态分析面板 -->
+      <div class="lg:col-span-5 flex flex-col gap-6">
+        <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+          <h2 class="text-lg font-bold text-slate-800 border-b pb-3 mb-4 flex items-center gap-2">
+            <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            当前节点权限状态表 (Rules)
+          </h2>
+          
+          <div class="text-sm text-slate-600 mb-4">
+            当前处于：<strong class="text-slate-800">{{ getStepTitle() }}</strong>。后端向前端表单设计器发送的表单权限配置规则如下：
+          </div>
+
+          <!-- 字段控制列表 -->
+          <div class="space-y-3">
+            <!-- 业务表单一权限 -->
+            <div class="p-3.5 rounded-xl border flex items-center justify-between" :class="getFieldClass(0)">
+              <div>
+                <div class="font-semibold text-xs text-slate-800">自定义业务表单一 (请假基础表单)</div>
+                <div class="text-[10px] text-slate-400 mt-0.5">请假人、类型、天数、请假原因</div>
+              </div>
+              <span class="permission-badge" :class="getFieldBadgeClass(0)">{{ getFieldStatusText(0) }}</span>
+            </div>
+
+            <!-- 业务表单二权限 -->
+            <div class="p-3.5 rounded-xl border flex items-center justify-between" :class="getFieldClass(1)">
+              <div>
+                <div class="font-semibold text-xs text-slate-800">自定义业务表单二 (经理补充表单)</div>
+                <div class="text-[10px] text-slate-400 mt-0.5">是否安排接班人、交接备忘录</div>
+              </div>
+              <span class="permission-badge" :class="getFieldBadgeClass(1)">{{ getFieldStatusText(1) }}</span>
+            </div>
+
+            <!-- 业务表单三权限 -->
+            <div class="p-3.5 rounded-xl border flex items-center justify-between" :class="getFieldClass(2)">
+              <div>
+                <div class="font-semibold text-xs text-slate-800">自定义业务表单三 (HR归档表单)</div>
+                <div class="text-[10px] text-slate-400 mt-0.5">核销年假天数、档案归类编号</div>
+              </div>
+              <span class="permission-badge" :class="getFieldBadgeClass(2)">{{ getFieldStatusText(2) }}</span>
+            </div>
+          </div>
+          
+          <div class="mt-6 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+            <h3 class="text-xs font-bold text-slate-700 mb-1">💡 规则总结：</h3>
+            <p class="text-xs text-slate-500 leading-relaxed">
+              工作流推荐的最佳实践是：<strong>“写当前，读历史，藏未来”</strong>。<br>
+              当前节点表单设为 <span class="text-blue-600 font-semibold">可写</span>；之前节点填好的表单数据设为 <span class="text-slate-600 font-semibold">只读</span> 供审查；而后续节点的表单由于还未填且与当前节点无关，设为 <span class="text-rose-600 font-semibold">隐藏</span> 根本不呈现。
+            </p>
+          </div>
+        </div>
+        
+        <!-- postMessage 拦截日志 -->
+        <div class="bg-slate-950 rounded-2xl p-6 flex flex-col flex-1 min-h-[200px] text-slate-200">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
+            <h3 class="font-mono text-sm font-semibold flex items-center gap-1.5 text-slate-300">
+              <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+              流程流转 postMessage 交互日志
+            </h3>
+            <button @click="clearLogs" class="text-xs text-slate-500 hover:text-slate-300">清空</button>
+          </div>
+          <div class="font-mono text-xs flex-1 custom-scroll overflow-y-auto max-h-[250px]">
+            <div v-if="logs.length === 0" class="text-slate-600 italic py-6 text-center">暂无操作日志...</div>
+            <div v-else v-for="(log, idx) in logs" :key="idx" class="mb-3 pb-2 border-b border-slate-900 last:border-0">
+              <div class="flex justify-between text-[10px] text-slate-500 mb-1">
+                <span>{{ log.time }}</span>
+                <span class="px-1 bg-slate-800 text-slate-400 rounded">{{ log.action }}</span>
+              </div>
+              <div class="text-indigo-400 font-semibold mb-1">{{ log.title }}</div>
+              <pre class="text-slate-300 text-[10px] leading-relaxed overflow-x-auto whitespace-pre-wrap">{{ JSON.stringify(log.data, null, 2) }}</pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右栏：高保真模拟页面 -->
+      <div class="lg:col-span-7">
+        <div class="bg-white rounded-3xl border border-slate-200 browser-shadow overflow-hidden">
+          <!-- 模拟窗口头部 -->
+          <div class="bg-slate-100 px-6 py-3 border-b border-slate-200 flex items-center gap-3">
+            <div class="flex gap-1.5">
+              <span class="w-3.5 h-3.5 rounded-full bg-[#ff5f56]"></span>
+              <span class="w-3.5 h-3.5 rounded-full bg-[#ffbd2e]"></span>
+              <span class="w-3.5 h-3.5 rounded-full bg-[#27c93f]"></span>
+            </div>
+            <div class="flex-1 bg-white rounded-lg border border-slate-200/80 px-3 py-0.5 text-xs text-slate-400 flex items-center gap-1 select-none">
+              <span>https://warm-flow.ui/</span><strong class="text-slate-700">formCreate_multiNode.vue</strong>
+            </div>
+            <span class="text-[10px] font-bold px-2 py-0.5 bg-slate-200 rounded text-slate-600 uppercase select-none">渲染视口</span>
+          </div>
+
+          <!-- 模拟 iframe 表单渲染区域 -->
+          <div class="p-8 bg-white min-h-[550px]">
+            <div class="max-w-2xl mx-auto space-y-6">
+
+              <!-- 节点一表单：请假基础表单 -->
+              <div v-if="isFormVisible(0)" class="border rounded-2xl p-6 relative transition" :class="isFormEditable(0) ? 'border-blue-400 bg-blue-50/5' : 'border-slate-200 bg-slate-50/50'">
+                <span class="absolute -top-2.5 left-4 px-2 bg-white text-[10px] font-bold text-slate-500 border rounded flex items-center gap-1">
+                  业务表单一：请假基础表单
+                  <span class="w-1.5 h-1.5 rounded-full" :class="isFormEditable(0) ? 'bg-blue-500' : 'bg-slate-400'"></span>
+                </span>
+                
+                <el-form :model="formData" label-position="left" label-width="110px" :disabled="!isFormEditable(0)">
+                  <el-form-item label="请假人" required>
+                    <el-input v-model="formData.name" placeholder="请输入请假人姓名" />
+                  </el-form-item>
+                  <div class="grid grid-cols-2 gap-4">
+                    <el-form-item label="请假天数" required>
+                      <el-input-number v-model="formData.duration" :min="0.5" :step="0.5" class="w-full" />
+                    </el-form-item>
+                    <el-form-item label="请假类型" required>
+                      <el-select v-model="formData.leaveType" placeholder="请选择" class="w-full">
+                        <el-option label="事假" value="personal" />
+                        <el-option label="病假" value="sick" />
+                      </el-select>
+                    </el-form-item>
+                  </div>
+                  <el-form-item label="请假原因" required class="!mb-0">
+                    <el-input v-model="formData.reason" type="textarea" placeholder="请输入具体请假原由..." :rows="2" />
+                  </el-form-item>
+                </el-form>
+              </div>
+
+              <!-- 节点二表单：经理补充表单 -->
+              <div v-if="isFormVisible(1)" class="border rounded-2xl p-6 relative transition" :class="isFormEditable(1) ? 'border-blue-400 bg-blue-50/5' : 'border-slate-200 bg-slate-50/50'">
+                <span class="absolute -top-2.5 left-4 px-2 bg-white text-[10px] font-bold text-slate-500 border rounded flex items-center gap-1">
+                  业务表单二：经理审批与补充
+                  <span class="w-1.5 h-1.5 rounded-full" :class="isFormEditable(1) ? 'bg-blue-500' : 'bg-slate-400'"></span>
+                </span>
+                
+                <el-form :model="formData" label-position="left" label-width="110px" :disabled="!isFormEditable(1)">
+                  <el-form-item label="安排接班人" required>
+                    <el-radio-group v-model="formData.hasReplacement">
+                      <el-radio :label="true">已安排妥当</el-radio>
+                      <el-radio :label="false">无需安排</el-radio>
+                    </el-radio-group>
+                  </el-form-item>
+                  <el-form-item label="工作交接备注" required class="!mb-0">
+                    <el-input v-model="formData.handoverNote" type="textarea" placeholder="请输入部门工作及岗位交接备注说明..." :rows="2" />
+                  </el-form-item>
+                </el-form>
+              </div>
+
+              <!-- 节点三表单：HR归档表单 -->
+              <div v-if="isFormVisible(2)" class="border rounded-2xl p-6 relative transition" :class="isFormEditable(2) ? 'border-blue-400 bg-blue-50/5' : 'border-slate-200 bg-slate-50/50'">
+                <span class="absolute -top-2.5 left-4 px-2 bg-white text-[10px] font-bold text-slate-500 border rounded flex items-center gap-1">
+                  业务表单三：HR归档与年假核消
+                  <span class="w-1.5 h-1.5 rounded-full" :class="isFormEditable(2) ? 'bg-blue-500' : 'bg-slate-400'"></span>
+                </span>
+                
+                <el-form :model="formData" label-position="left" label-width="110px" :disabled="!isFormEditable(2)">
+                  <el-form-item label="抵扣年假(天)" required>
+                    <el-input-number v-model="formData.annualLeaveDeduct" :min="0" class="w-full" />
+                  </el-form-item>
+                  <el-form-item label="人事归档编号" required class="!mb-0">
+                    <el-input v-model="formData.archiveId" placeholder="请输入考勤系统归档编号（如 HR-2026-0089）" />
+                  </el-form-item>
+                </el-form>
+              </div>
+
+              <!-- 未呈现表单的占位提示 -->
+              <div v-if="getHiddenFormsCount() > 0" class="border border-dashed border-rose-200 bg-rose-50/20 rounded-2xl p-4 text-center text-xs text-rose-500">
+                <span class="font-semibold block mb-0.5">🔒 {{ getHiddenFormsCount() }} 个后续节点业务表单已自动隐藏 (不渲染)</span>
+                出于流程节点权限与信息安全考虑，未流转到的节点表单在当前界面上完全不呈现。
+              </div>
+
+              <!-- 审批动作处理区 -->
+              <div v-if="hasApprovalActions()" class="pt-2">
+                <el-divider>
+                  <span class="text-xs text-slate-400 font-normal select-none">审批意见与动作</span>
+                </el-divider>
+                
+                <el-form label-position="top">
+                  <el-form-item label="审批意见" required>
+                    <el-input v-model="opinionMessage" type="textarea" placeholder="请输入审批意见..." :rows="3" />
+                  </el-form-item>
+                  
+                  <div class="flex justify-end gap-3">
+                    <el-button @click="handleAction('REJECT')" class="!px-6 hover:!border-rose-400 hover:!text-rose-500 transition">
+                      退回
+                    </el-button>
+                    <el-button type="primary" @click="handleAction('PASS')" class="!px-6 bg-blue-600 border-blue-600 hover:bg-blue-700 transition">
+                      {{ getSubmitButtonText() }}
+                    </el-button>
+                  </div>
+                </el-form>
+              </div>
+              
+              <!-- 首个申请节点的提交按钮 -->
+              <div v-if="currentStep === 0" class="flex justify-end pt-4 border-t border-slate-100">
+                <el-button type="primary" @click="handleAction('SUBMIT')" class="!px-8 bg-blue-600 border-blue-600 hover:bg-blue-700 transition">
+                  提交申请 (进入下一节点)
+                </el-button>
+              </div>
+
+              <!-- 归档完毕提示 -->
+              <div v-if="currentStep === 3" class="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl p-4 text-center text-xs">
+                <strong class="block text-sm font-semibold mb-1">🎉 该流程已流转完毕并归档</strong>
+                所有自定义表单均已转化为历史归档数据，仅供只读审查，不可再次修改。
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 引入库 -->
+  <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/element-plus"></script>
+  <script src="https://cdn.jsdelivr.net/npm/element-plus/dist/locale/zh-cn.min.js"></script>
+
+  <script>
+    const { createApp, ref, reactive, onMounted } = Vue;
+
+    createApp({
+      setup() {
+        const currentStep = ref(0);
+        const opinionMessage = ref("");
+        const logs = ref([]);
+
+        const formData = reactive({
+          name: "王小明",
+          duration: 3,
+          leaveType: "personal",
+          reason: "因家里突发急事，需请假回家协助处理，望领导批准。",
+          
+          hasReplacement: true,
+          handoverNote: "工作已交接给同组的李华，关键文档已上传共享云盘，核心代码已合并推送到远程库。",
+          
+          annualLeaveDeduct: 3,
+          archiveId: "HR-2026-LV-0412"
+        });
+
+        function addLog(action, title, data) {
+          logs.value.unshift({
+            time: new Date().toLocaleTimeString(),
+            action,
+            title,
+            data
+          });
+        }
+
+        function clearLogs() {
+          logs.value = [];
+        }
+
+        function goToStep(step) {
+          currentStep.value = step;
+          opinionMessage.value = "";
+          
+          const mockRules = {
+            step: step,
+            nodeTitle: getStepTitle(),
+            permissions: {
+              form1: step === 0 ? "writable" : "readonly",
+              form2: step === 0 ? "hidden" : (step === 1 ? "writable" : "readonly"),
+              form3: step < 2 ? "hidden" : (step === 2 ? "writable" : "readonly")
+            }
+          };
+          addLog("Parent ➔ Frame", `切换到 [${getStepTitle()}] 并初始化`, mockRules);
+        }
+
+        function getStepTitle() {
+          switch (currentStep.value) {
+            case 0: return "节点一：员工申请";
+            case 1: return "节点二：经理审批";
+            case 2: return "节点三：HR确认";
+            default: return "流程流转完成";
+          }
+        }
+
+        function isFormVisible(formIndex) {
+          if (formIndex === 0) return true;
+          if (formIndex === 1) return currentStep.value >= 1;
+          if (formIndex === 2) return currentStep.value >= 2;
+          return false;
+        }
+
+        function isFormEditable(formIndex) {
+          if (currentStep.value === 3) return false;
+          return currentStep.value === formIndex;
+        }
+
+        function getHiddenFormsCount() {
+          let count = 0;
+          if (!isFormVisible(1)) count++;
+          if (!isFormVisible(2)) count++;
+          return count;
+        }
+
+        function getFieldClass(formIndex) {
+          if (isFormEditable(formIndex)) {
+            return "border-blue-200 bg-blue-50/20";
+          } else if (isFormVisible(formIndex)) {
+            return "border-slate-200 bg-slate-50/50";
+          } else {
+            return "border-rose-100 bg-rose-50/20 opacity-60";
+          }
+        }
+
+        function getFieldBadgeClass(formIndex) {
+          if (isFormEditable(formIndex)) return "badge-writable";
+          if (isFormVisible(formIndex)) return "badge-readonly";
+          return "badge-hidden";
+        }
+
+        function getFieldStatusText(formIndex) {
+          if (isFormEditable(formIndex)) return "可写 (Writable)";
+          if (isFormVisible(formIndex)) return "只读 (ReadOnly)";
+          return "隐藏 (Hidden)";
+        }
+
+        function hasApprovalActions() {
+          return currentStep.value === 1 || currentStep.value === 2;
+        }
+
+        function getSubmitButtonText() {
+          if (currentStep.value === 1) return "审批通过 (送节点三)";
+          if (currentStep.value === 2) return "归档完毕 (结束流程)";
+          return "提交";
+        }
+
+        function handleAction(actionType) {
+          if (currentStep.value === 0 && (!formData.name || !formData.reason)) {
+            ElementPlus.ElMessage.warning('请填写完整的请假申请信息！');
+            return;
+          }
+          if (currentStep.value === 1 && (!formData.handoverNote || (hasApprovalActions() && !opinionMessage.value))) {
+            ElementPlus.ElMessage.warning('请填写工作交接备注与审批意见！');
+            return;
+          }
+          if (currentStep.value === 2 && (!formData.archiveId || (hasApprovalActions() && !opinionMessage.value))) {
+            ElementPlus.ElMessage.warning('请填写归档编号与审批意见！');
+            return;
+          }
+
+          const currentFormData = {};
+          if (currentStep.value >= 0) {
+            currentFormData.form1 = { name: formData.name, duration: formData.duration, leaveType: formData.leaveType, reason: formData.reason };
+          }
+          if (currentStep.value >= 1) {
+            currentFormData.form2 = { hasReplacement: formData.hasReplacement, handoverNote: formData.handoverNote };
+          }
+          if (currentStep.value >= 2) {
+            currentFormData.form3 = { annualLeaveDeduct: formData.annualLeaveDeduct, archiveId: formData.archiveId };
+          }
+
+          const payload = {
+            method: "submitSuccess",
+            action: actionType,
+            currentNode: getStepTitle(),
+            opinion: opinionMessage.value,
+            businessData: currentFormData
+          };
+
+          addLog("Frame ➔ Parent", `发送事件 [submitSuccess]`, payload);
+          
+          ElementPlus.ElNotification({
+            title: '操作发送成功',
+            message: `动作：${actionType}，业务数据已封装并发往父系统。`,
+            type: 'success'
+          });
+
+          setTimeout(() => {
+            if (actionType !== 'REJECT') {
+              if (currentStep.value < 3) goToStep(currentStep.value + 1);
+            } else {
+              if (currentStep.value > 0) goToStep(currentStep.value - 1);
+            }
+          }, 800);
+        }
+
+        onMounted(() => {
+          goToStep(0);
+        });
+
+        return {
+          currentStep,
+          opinionMessage,
+          formData,
+          logs,
+          goToStep,
+          getStepTitle,
+          isFormVisible,
+          isFormEditable,
+          getHiddenFormsCount,
+          getFieldClass,
+          getFieldBadgeClass,
+          getFieldStatusText,
+          hasApprovalActions,
+          getSubmitButtonText,
+          handleAction,
+          clearLogs
+        };
+      }
+    })
+    .use(ElementPlus, { locale: ElementPlusLocaleZhCn })
+    .mount("#app");
+  </script>
+</body>
+</html>

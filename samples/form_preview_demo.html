@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>formCreate.vue 渲染模拟器</title>
+  <!-- 引入 Element Plus CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-plus/dist/index.css">
+  <!-- 引入 Tailwind CSS 用于快速精美布局 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Font - Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: radial-gradient(circle at top right, rgba(240, 244, 255, 0.5) 0%, rgba(247, 250, 252, 1) 100%);
+      min-height: 100vh;
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(226, 232, 240, 0.8);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03);
+    }
+    .browser-window {
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    /* 隐藏滚动条 */
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+</head>
+<body class="p-6 md:p-12">
+  <div id="app" class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <header class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-3">
+          <span class="px-3 py-1 text-xs font-semibold text-blue-600 bg-blue-50 border border-blue-200 rounded-full">交互式分析</span>
+          <h1 class="text-3xl font-bold text-slate-800 tracking-tight">formCreate.vue 渲染与交互模拟</h1>
+        </div>
+        <p class="text-slate-500 mt-1 text-sm">此页面动态模拟了 <code>src/components/form/formCreate.vue</code> 的表单渲染效果与跨 iframe 通信机制。</p>
+      </div>
+      <div class="flex gap-2 text-xs text-slate-400">
+        <span>当前运行模式: Vue 3 + Element Plus + Tailwind CSS</span>
+      </div>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <!-- 左栏：控制台与日志模拟 -->
+      <div class="lg:col-span-5 flex flex-col gap-6">
+        <!-- 核心配置控制器 -->
+        <div class="glass-card rounded-2xl p-6">
+          <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2 border-b pb-3 border-slate-100">
+            <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+            父页面控制面板 (Parent Simulator)
+          </h2>
+
+          <el-form label-position="top">
+            <el-form-item label="1. 预设业务表单模版 (Form Rule)">
+              <el-radio-group v-model="selectedTemplate" @change="changeTemplate" size="small" class="w-full">
+                <el-radio-button label="leave">员工请假申请单</el-radio-button>
+                <el-radio-button label="expense">差旅报销申请单</el-radio-button>
+              </el-radio-group>
+            </el-form-item>
+
+            <el-form-item label="2. 任务流转类型 (data.type)">
+              <el-radio-group v-model="dataType" @change="sendInitMessage" class="w-full">
+                <div class="grid grid-cols-3 gap-2 w-full">
+                  <label class="flex flex-col items-center justify-between p-3 border rounded-xl cursor-pointer hover:bg-slate-50 transition" :class="{'border-blue-500 bg-blue-50/50': dataType === '0'}">
+                    <input type="radio" value="0" v-model="dataType" @change="sendInitMessage" class="sr-only">
+                    <span class="text-xs font-semibold text-slate-700">"0" 待办-办理</span>
+                    <span class="text-[10px] text-slate-400 mt-1 text-center">可编辑表单并显示审批栏</span>
+                  </label>
+                  <label class="flex flex-col items-center justify-between p-3 border rounded-xl cursor-pointer hover:bg-slate-50 transition" :class="{'border-blue-500 bg-blue-50/50': dataType === '1'}">
+                    <input type="radio" value="1" v-model="dataType" @change="sendInitMessage" class="sr-only">
+                    <span class="text-xs font-semibold text-slate-700">"1" 已办-历史</span>
+                    <span class="text-[10px] text-slate-400 mt-1 text-center">隐藏审批栏，查看历史</span>
+                  </label>
+                  <label class="flex flex-col items-center justify-between p-3 border rounded-xl cursor-pointer hover:bg-slate-50 transition" :class="{'border-blue-500 bg-blue-50/50': dataType === '2'}">
+                    <input type="radio" value="2" v-model="dataType" @change="sendInitMessage" class="sr-only">
+                    <span class="text-xs font-semibold text-slate-700">"2" 已发布表单</span>
+                    <span class="text-[10px] text-slate-400 mt-1 text-center">隐藏审批栏，仅供阅览</span>
+                  </label>
+                </div>
+              </el-radio-group>
+            </el-form-item>
+
+            <div class="grid grid-cols-2 gap-4">
+              <el-form-item label="3. 禁用表单 (disabled)">
+                <el-switch v-model="disabledFlag" active-text="全部只读" inactive-text="可写编辑" @change="sendInitMessage" />
+              </el-form-item>
+              
+              <el-form-item label="模拟参数 (taskId)">
+                <el-input v-model="taskId" placeholder="任务ID" size="small" @change="sendInitMessage" />
+              </el-form-item>
+            </div>
+            
+            <div class="mt-4 flex gap-2">
+              <el-button type="primary" size="default" class="w-full" @click="sendInitMessage">
+                重新发送 formInit 消息
+              </el-button>
+              <el-button size="default" class="w-1/3" @click="sendResetMessage">
+                重置表单
+              </el-button>
+            </div>
+          </el-form>
+        </div>
+
+        <!-- 消息监听日志器 -->
+        <div class="glass-card rounded-2xl p-6 flex-1 flex flex-col min-h-[250px]">
+          <div class="flex items-center justify-between mb-3 border-b pb-3 border-slate-100">
+            <h2 class="text-lg font-semibold text-slate-800 flex items-center gap-2">
+              <span class="relative flex h-3 w-3">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+              </span>
+              Iframe 消息监听日志
+            </h2>
+            <button @click="clearLogs" class="text-xs text-slate-400 hover:text-slate-600 transition">清空日志</button>
+          </div>
+          
+          <div class="bg-slate-950 rounded-xl p-4 flex-1 font-mono text-xs text-slate-300 custom-scroll overflow-y-auto max-h-[300px]">
+            <div v-if="logs.length === 0" class="text-slate-500 italic text-center py-8">
+              等待接收 iframe 消息 (window.postMessage)...
+            </div>
+            <div v-else v-for="(log, idx) in logs" :key="idx" class="mb-4 border-b border-slate-800 pb-2 last:border-b-0">
+              <div class="flex justify-between text-[10px] text-slate-500 mb-1">
+                <span>{{ log.time }}</span>
+                <span class="px-1.5 py-0.2 bg-slate-800 text-slate-400 rounded">{{ log.direction }}</span>
+              </div>
+              <div class="text-emerald-400 font-bold mb-1">{{ log.method }}</div>
+              <pre class="text-slate-300 whitespace-pre-wrap overflow-x-auto text-[11px] leading-relaxed">{{ JSON.stringify(log.data, null, 2) }}</pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右栏：模拟 iframe 界面 -->
+      <div class="lg:col-span-7">
+        <div class="bg-white rounded-3xl browser-window overflow-hidden border border-slate-200">
+          <!-- 模拟浏览器头部栏 -->
+          <div class="bg-slate-100 px-6 py-3 border-b border-slate-200 flex items-center gap-3">
+            <!-- 浏览器红绿灯按钮 -->
+            <div class="flex gap-1.5">
+              <span class="w-3.5 h-3.5 rounded-full bg-[#ff5f56] inline-block"></span>
+              <span class="w-3.5 h-3.5 rounded-full bg-[#ffbd2e] inline-block"></span>
+              <span class="w-3.5 h-3.5 rounded-full bg-[#27c93f] inline-block"></span>
+            </div>
+            <!-- 地址栏 -->
+            <div class="flex-1 bg-white rounded-lg border border-slate-200/80 px-3 py-1 text-xs text-slate-500 flex items-center gap-1.5 select-none">
+              <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+              <span class="text-slate-400">https://warm-flow.ui/components/form/</span><span class="text-slate-800 font-medium">formCreate.vue</span>
+            </div>
+            <!-- iframe 状态标识 -->
+            <span class="text-xs font-semibold px-2 py-0.5 bg-indigo-50 border border-indigo-200 rounded text-indigo-600 uppercase tracking-wider scale-95">Iframe 内嵌页</span>
+          </div>
+
+          <!-- iframe 表单渲染区域 -->
+          <div class="p-8 min-h-[500px] bg-white relative">
+            <div class="max-w-2xl mx-auto">
+              
+              <!-- Vue 组件渲染结果 -->
+              <div class="border border-dashed border-blue-200 rounded-2xl p-6 bg-slate-50/50 relative">
+                <span class="absolute -top-2.5 left-4 px-2 bg-white text-[10px] font-bold text-blue-500 border border-blue-200 rounded">
+                  &lt;el-form&gt; 容器根组件
+                </span>
+
+                <!-- 1. form-create 动态表单组件 -->
+                <div class="border border-dashed border-purple-200 rounded-xl p-6 bg-white relative mb-6">
+                  <span class="absolute -top-2.5 left-4 px-2 bg-white text-[10px] font-bold text-purple-500 border border-purple-200 rounded">
+                    &lt;form-create&gt; 动态表单生成器 (可根据后端 Rule 渲染)
+                  </span>
+
+                  <!-- 表单内部输入控件演示 (模拟渲染结果) -->
+                  <el-form :model="simFormData" :disabled="disabledFlag" label-position="left" label-width="100px">
+                    <!-- 请假申请单模版 -->
+                    <template v-if="selectedTemplate === 'leave'">
+                      <el-form-item label="请假人" required>
+                        <el-input v-model="simFormData.name" placeholder="请输入姓名" :disabled="disabledFlag" />
+                      </el-form-item>
+                      <el-form-item label="请假类型" required>
+                        <el-select v-model="simFormData.leaveType" placeholder="请选择请假类型" class="w-full" :disabled="disabledFlag">
+                          <el-option label="事假" value="personal" />
+                          <el-option label="病假" value="sick" />
+                          <el-option label="年假" value="annual" />
+                        </el-select>
+                      </el-form-item>
+                      <div class="grid grid-cols-2 gap-4">
+                        <el-form-item label="开始日期" required>
+                          <el-date-picker v-model="simFormData.startDate" type="date" placeholder="选择日期" class="w-full" value-format="YYYY-MM-DD" :disabled="disabledFlag" />
+                        </el-form-item>
+                        <el-form-item label="结束日期" required>
+                          <el-date-picker v-model="simFormData.endDate" type="date" placeholder="选择日期" class="w-full" value-format="YYYY-MM-DD" :disabled="disabledFlag" />
+                        </el-form-item>
+                      </div>
+                      <el-form-item label="请假时长(天)" required>
+                        <el-input-number v-model="simFormData.duration" :min="0.5" :step="0.5" class="w-full text-left" :disabled="disabledFlag" />
+                      </el-form-item>
+                      <el-form-item label="请假原因" required>
+                        <el-input v-model="simFormData.reason" type="textarea" placeholder="请输入详细的请假原因说明" :rows="3" :disabled="disabledFlag" />
+                      </el-form-item>
+                    </template>
+
+                    <!-- 差旅报销申请单模版 -->
+                    <template v-if="selectedTemplate === 'expense'">
+                      <el-form-item label="报销人" required>
+                        <el-input v-model="simFormData.applicant" placeholder="请输入姓名" :disabled="disabledFlag" />
+                      </el-form-item>
+                      <el-form-item label="报销项目" required>
+                        <el-input v-model="simFormData.project" placeholder="请输入报销关联的项目名称" :disabled="disabledFlag" />
+                      </el-form-item>
+                      <el-form-item label="报销金额(元)" required>
+                        <el-input-number v-model="simFormData.amount" :min="0" :precision="2" class="w-full" :disabled="disabledFlag" />
+                      </el-form-item>
+                      <el-form-item label="费用明细描述" required>
+                        <el-input v-model="simFormData.description" type="textarea" placeholder="请详细列出消费明细，如：往返高铁票、住宿费用等" :rows="3" :disabled="disabledFlag" />
+                      </el-form-item>
+                    </template>
+                  </el-form>
+                </div>
+
+                <!-- 2. 分割线 & 审批意见区 -->
+                <div v-if="showApprovalFields" class="relative pt-2">
+                  <!-- 分割线 -->
+                  <el-divider>
+                    <span class="text-xs text-slate-400 font-normal select-none">&lt;el-divider&gt; 审批处理</span>
+                  </el-divider>
+
+                  <el-form label-position="top">
+                    <!-- 审批意见输入框 -->
+                    <el-form-item label="审批意见" required class="!mb-6">
+                      <template #label>
+                        <span class="text-sm font-semibold text-slate-700">审批意见</span>
+                        <span class="text-[10px] text-indigo-500 ml-2 font-mono">(v-model="message")</span>
+                      </template>
+                      <el-input 
+                        v-model="message" 
+                        type="textarea" 
+                        placeholder="请输入审批意见" 
+                        :autosize="{ minRows: 4, maxRows: 4 }"
+                        class="shadow-sm"
+                      />
+                    </el-form-item>
+                    
+                    <!-- 操作按钮 -->
+                    <div class="flex justify-end gap-3 mt-4">
+                      <el-button @click="handleBtn('REJECT')" class="!px-6 hover:!border-red-400 hover:!text-red-500 transition">
+                        退回
+                      </el-button>
+                      <el-button type="primary" @click="handleBtn('PASS')" class="!px-6 bg-blue-600 border-blue-600 hover:bg-blue-700 transition">
+                        审批通过
+                      </el-button>
+                    </div>
+                  </el-form>
+                </div>
+
+                <div v-else class="text-center py-6 px-4 bg-slate-100/60 rounded-xl text-slate-400 text-xs border border-dashed select-none mt-2">
+                  <span class="font-semibold text-slate-500 block mb-1">审批区已隐藏 (showApprovalFields = false)</span>
+                  当流程类型为“已办历史记录”(type="1") 或查看“已发布表单设计”(type="2")时，不显示审批操作
+                </div>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 引入 Vue 3 & Element Plus -->
+  <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/element-plus"></script>
+  <!-- 引入 Element Plus 国际化(中文) -->
+  <script src="https://cdn.jsdelivr.net/npm/element-plus/dist/locale/zh-cn.min.js"></script>
+
+  <script>
+    const { createApp, ref, reactive, toRefs, onMounted, watch } = Vue;
+
+    createApp({
+      setup() {
+        // 模拟外部父页面状态
+        const dataType = ref("0");
+        const disabledFlag = ref(false);
+        const taskId = ref("task_12345");
+        const selectedTemplate = ref("leave");
+        const logs = ref([]);
+
+        // 模拟内部 iframe 组件状态
+        const message = ref("");
+        const showApprovalFields = ref(true);
+
+        // 模拟动态表单数据
+        const simFormData = reactive({
+          name: "张三",
+          leaveType: "personal",
+          startDate: "2026-06-16",
+          endDate: "2026-06-18",
+          duration: 3,
+          reason: "家里有紧急事情需要回去处理三天。",
+          
+          applicant: "李四",
+          project: "Aether 流程引擎升级研发",
+          amount: 1258.50,
+          description: "2026-06-10 北京-上海往返高铁二等座票：850元；快捷酒店一晚住宿费：408.5元。合计1258.5元。"
+        });
+
+        // 记录通信日志
+        function addLog(direction, method, data) {
+          logs.value.unshift({
+            time: new Date().toLocaleTimeString(),
+            direction,
+            method,
+            data
+          });
+        }
+
+        // 清空日志
+        function clearLogs() {
+          logs.value = [];
+        }
+
+        // 切换模版
+        function changeTemplate() {
+          addLog("Parent ➔ Frame", "changeTemplate", { template: selectedTemplate.value });
+          sendInitMessage();
+        }
+
+        // 模拟父页面向 iframe 发送初始化消息
+        function sendInitMessage() {
+          // 整理模拟的后端返回表单配置 (根据模板)
+          let mockRule = [];
+          if (selectedTemplate.value === 'leave') {
+            mockRule = [
+              { type: 'input', field: 'name', title: '请假人', validate: [{required: true}] },
+              { type: 'select', field: 'leaveType', title: '请假类型', options: [{label: '事假', value: 'personal'}] },
+              { type: 'datePicker', field: 'startDate', title: '开始日期' },
+              { type: 'datePicker', field: 'endDate', title: '结束日期' },
+              { type: 'inputNumber', field: 'duration', title: '请假时长' },
+              { type: 'input', field: 'reason', title: '请假原因', props: {type: 'textarea'} }
+            ];
+          } else {
+            mockRule = [
+              { type: 'input', field: 'applicant', title: '报销人' },
+              { type: 'input', field: 'project', title: '报销项目' },
+              { type: 'inputNumber', field: 'amount', title: '报销金额' },
+              { type: 'input', field: 'description', title: '费用描述', props: {type: 'textarea'} }
+            ];
+          }
+
+          const initData = {
+            taskId: taskId.value,
+            type: dataType.value,
+            disabled: disabledFlag.value,
+            formId: "form_9988",
+            rule: mockRule,
+            option: { submitBtn: false }
+          };
+
+          addLog("Parent ➔ Frame", "postMessage [formInit]", initData);
+          
+          // 模拟 iframe 内部接收并处理 "formInit" 消息
+          handleFrameMessage({
+            data: {
+              method: "formInit",
+              data: initData
+            }
+          });
+        }
+
+        // 模拟父页面向 iframe 发送重置消息
+        function sendResetMessage() {
+          addLog("Parent ➔ Frame", "postMessage [reset]", null);
+          handleFrameMessage({
+            data: {
+              method: "reset"
+            }
+          });
+        }
+
+        // 模拟 iframe 内部接收消息的处理器
+        function handleFrameMessage(event) {
+          const { method, data } = event.data;
+          
+          if (method === "formInit") {
+            if (data.type === "0") {
+              message.value = "";
+              showApprovalFields.value = true;
+            } else if (data.type === "1") {
+              showApprovalFields.value = false;
+            } else {
+              showApprovalFields.value = false;
+            }
+
+            disabledFlag.value = data.disabled;
+            
+            setTimeout(() => {
+              const mockHeight = showApprovalFields.value ? 720 : 420;
+              addLog("Frame ➔ Parent", "postMessage [getOffsetHeight]", { offsetHeight: mockHeight });
+            }, 300);
+
+          } else if (method === "reset") {
+            message.value = "";
+            if (selectedTemplate.value === 'leave') {
+              simFormData.name = "";
+              simFormData.leaveType = "";
+              simFormData.startDate = "";
+              simFormData.endDate = "";
+              simFormData.duration = 0;
+              simFormData.reason = "";
+            } else {
+              simFormData.applicant = "";
+              simFormData.project = "";
+              simFormData.amount = 0;
+              simFormData.description = "";
+            }
+            addLog("Frame", "Internal Reset Triggered", { message: "已重置表单字段" });
+          }
+        }
+
+        function handleBtn(skipType) {
+          if (showApprovalFields.value && !message.value.trim()) {
+            ElementPlus.ElMessage.warning('请输入审批意见后再提交！');
+            return;
+          }
+
+          const postPayload = {
+            method: "submitSuccess",
+            skipType: skipType,
+            taskId: taskId.value,
+            message: message.value,
+            formData: selectedTemplate.value === 'leave' ? {
+              name: simFormData.name,
+              leaveType: simFormData.leaveType,
+              startDate: simFormData.startDate,
+              endDate: simFormData.endDate,
+              duration: simFormData.duration,
+              reason: simFormData.reason
+            } : {
+              applicant: simFormData.applicant,
+              project: simFormData.project,
+              amount: simFormData.amount,
+              description: simFormData.description
+            }
+          };
+
+          addLog("Frame ➔ Parent", "postMessage [submitSuccess]", postPayload);
+          ElementPlus.ElNotification({
+            title: skipType === 'PASS' ? '审批通过' : '退回成功',
+            message: `已向父级发送 submitSuccess 消息，动作：${skipType === 'PASS' ? '通过' : '退回'}`,
+            type: skipType === 'PASS' ? 'success' : 'info'
+          });
+        }
+
+        onMounted(() => {
+          sendInitMessage();
+        });
+
+        return {
+          dataType,
+          disabledFlag,
+          taskId,
+          selectedTemplate,
+          logs,
+          message,
+          showApprovalFields,
+          simFormData,
+          changeTemplate,
+          sendInitMessage,
+          sendResetMessage,
+          handleBtn,
+          clearLogs
+        };
+      }
+    })
+    .use(ElementPlus, { locale: ElementPlusLocaleZhCn })
+    .mount("#app");
+  </script>
+</body>
+</html>
