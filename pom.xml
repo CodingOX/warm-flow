@@ -98,6 +98,7 @@
         <easy-query.version>3.1.79</easy-query.version>
 
         <!-- 工具库版本 -->
+        <lombok.version>1.18.38</lombok.version>
         <junit.version>4.13.2</junit.version>
         <slf4j-api.version>1.7.36</slf4j-api.version>
     </properties>
@@ -118,6 +119,12 @@
                 <groupId>org.noear</groupId>
                 <artifactId>solon</artifactId>
                 <version>${solon.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
             </dependency>
 
             <dependency>
@@ -435,6 +442,19 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
