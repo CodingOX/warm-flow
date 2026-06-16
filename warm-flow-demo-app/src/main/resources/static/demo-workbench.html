@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Warm-Flow Demo Workbench</title>
+  <link rel="stylesheet" href="/demo-workbench.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="panel">
+      <h1>Warm-Flow Demo Workbench</h1>
+      <div class="section">
+        <label for="actor">视角</label>
+        <select id="actor">
+          <option value="applicant">申请人</option>
+          <option value="leader">主管</option>
+          <option value="manager">经理</option>
+        </select>
+      </div>
+      <div class="section">
+        <label for="taskId">任务 ID</label>
+        <input id="taskId" type="text" placeholder="待办或历史任务 ID" />
+      </div>
+      <div class="section">
+        <label for="mode">模式</label>
+        <select id="mode">
+          <option value="0">待办办理</option>
+          <option value="1">已办历史</option>
+          <option value="2">已发布表单预览</option>
+        </select>
+      </div>
+      <div class="section">
+        <label for="formId">表单 ID</label>
+        <input id="formId" type="text" placeholder="表单预览时填写" />
+      </div>
+      <div class="actions">
+        <button id="openFrame" type="button">打开表单</button>
+      </div>
+      <div id="log" class="log"></div>
+    </aside>
+    <main class="frame-shell">
+      <iframe id="flowFrame" title="Warm-Flow 表单 iframe"></iframe>
+    </main>
+  </div>
+  <script src="/demo-workbench.js"></script>
+</body>
+</html>

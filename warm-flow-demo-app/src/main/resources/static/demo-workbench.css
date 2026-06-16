@@ -1,0 +1,91 @@
+html, body {
+  margin: 0;
+  height: 100%;
+  font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(77, 97, 255, 0.20), transparent 30%),
+    linear-gradient(135deg, #0f172a 0%, #111827 45%, #1f2937 100%);
+  color: #e5e7eb;
+}
+
+.layout {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 360px 1fr;
+}
+
+.panel {
+  padding: 28px;
+  background: rgba(15, 23, 42, 0.78);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+}
+
+.panel h1 {
+  margin: 0 0 20px;
+  font-size: 26px;
+  line-height: 1.2;
+}
+
+.section {
+  margin-bottom: 16px;
+}
+
+.section label {
+  display: block;
+  margin-bottom: 6px;
+  color: #93c5fd;
+  font-size: 13px;
+}
+
+.section input,
+.section select {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #f8fafc;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.actions button {
+  flex: 1;
+  border: 0;
+  border-radius: 10px;
+  padding: 11px 14px;
+  cursor: pointer;
+  color: #0f172a;
+  background: linear-gradient(135deg, #f8fafc, #cbd5e1);
+  font-weight: 700;
+}
+
+.frame-shell {
+  padding: 18px;
+}
+
+.frame-shell iframe {
+  width: 100%;
+  height: calc(100vh - 36px);
+  border: 0;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+
+.log {
+  margin-top: 16px;
+  padding: 12px;
+  min-height: 120px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: auto;
+  font-size: 12px;
+  white-space: pre-wrap;
+}

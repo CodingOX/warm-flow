@@ -1,0 +1,17 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: warm-flow-demo-app
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/warm_flow_demo?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+warm-flow:
+  enabled: true
+  ui: true
+  data-source-type: mysql
+  token-name: Authorization
