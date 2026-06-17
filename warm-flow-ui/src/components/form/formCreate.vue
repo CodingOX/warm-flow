@@ -31,6 +31,7 @@ const fApi = ref(null);
 // 运行态壳层自行决定是否显示提交动作；这些动作不属于 form-create 的业务表单 schema。
 const showApprovalFields = ref(true);
 const showApplicantSubmit = ref(false);
+const allowSnapshot = ref(false);
 const taskId = ref("");
 const message = ref("");
 const data = reactive({
@@ -50,12 +51,20 @@ onBeforeUnmount(() => {
 });
 
 function handleMessage(event) {
+  if (!event.data || !event.data.method) {
+    return;
+  }
   switch (event.data.method) {
     case "formInit":
       formInit(event.data.data);
       break;
     case "reset":
       reset(); // 表单重置
+      break;
+    case "collectFormData":
+      if (allowSnapshot.value) {
+        collectFormDataSnapshot();
+      }
       break;
   }
 }
@@ -64,6 +73,46 @@ function reset() {
   formData.value = {};
   message.value = "";
 };
+
+function emitFormDataSnapshot() {
+  const snapshot = JSON.parse(JSON.stringify(formData.value || {}));
+  // 只有父页面显式开启 allowSnapshot，才允许导出当前表单数据。
+  window.parent.postMessage({
+    method: "formDataSnapshot",
+    data: {
+      taskId: taskId.value,
+      formData: snapshot
+    }
+  }, "*");
+}
+
+function emitFormDataSnapshotError(messageText) {
+  window.parent.postMessage({
+    method: "formDataSnapshotError",
+    data: {
+      taskId: taskId.value,
+      message: messageText
+    }
+  }, "*");
+}
+
+function collectFormDataSnapshot() {
+  if (!fApi.value || !proxy.$refs["form"]) {
+    emitFormDataSnapshotError("表单尚未初始化完成");
+    return;
+  }
+  // 与原生提交保持同一套校验口径：先触发表单组件校验，再导出快照。
+  fApi.value.submit(() => {
+    proxy.$refs["form"].validate(valid => {
+      if (!valid) {
+        emitFormDataSnapshotError("请先完成表单必填项");
+        return;
+      }
+      emitFormDataSnapshot();
+    });
+  });
+}
+
 /** 审核通过按钮 */
 function handleBtn(skipType) {
   fApi.value.submit(() => {
@@ -81,6 +130,7 @@ async function formInit(data) {
   let response;
   let formContent;
   taskId.value = data.taskId;
+  allowSnapshot.value = !!data.allowSnapshot;
   // type 来源：
   // 0 = 待办办理（审批人）
   // 1 = 已办历史
@@ -119,6 +169,13 @@ async function formInit(data) {
   if (option.value) option.value.submitBtn = false;
   formData.value = response.data.data; // 表单内容
   proxy.$nextTick(() => {
+    window.parent.postMessage({
+      method: "formReady",
+      data: {
+        taskId: taskId.value,
+        type: data.type
+      }
+    }, "*");
     window.parent.postMessage({ method: "getOffsetHeight", offsetHeight: proxy.$refs.form.$el.offsetHeight }, "*");
   });
 };
