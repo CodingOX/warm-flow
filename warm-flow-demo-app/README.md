@@ -44,3 +44,9 @@ mvn -pl warm-flow-demo-app -am spring-boot:run
 - 宿主页通过 iframe 承载 `/warm-flow-ui/index.html?type=formCreate`
 - `formCustom = Y` 时，流程节点通过动态表单主键 ID 绑定系统表单配置界面产出的表单
 - 若本地库曾按旧脚本初始化，`flow_form` 需要包含 `create_by`、`update_by`，否则 `query-def` 会在读取已发布表单时直接报 500
+
+## 相关文档
+
+- `docs/knowledge/01-overview/god-workbench-stage-summary.md`
+- `docs/knowledge/04-integration/god-workbench-config-reference.md`
+- `docs/knowledge/07-faq/god-workbench-faq.md`
