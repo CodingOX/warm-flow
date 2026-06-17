@@ -13,6 +13,10 @@
 
 - `04-integration/god-workbench-config-reference.md`
   - 汇总本轮涉及的前后端入口、接口、`postMessage` 契约、运行时资源目录、构建与排查命令。
+- `04-integration/warm-flow-iframe-vs-selfbuild.md`
+  - 集成架构决策分析：iframe 方案与自建前端的可行性对比、各模块难度评估、推荐方案。
+- `04-integration/warm-flow-designer-embed.md`
+  - 流程设计器自建集成指南：组件引入的完整步骤、文件映射清单、代码改造点、难度评估。
 
 ### FAQ
 
