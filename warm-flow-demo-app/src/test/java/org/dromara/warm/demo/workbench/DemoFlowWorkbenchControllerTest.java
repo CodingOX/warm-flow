@@ -21,4 +21,11 @@ class DemoFlowWorkbenchControllerTest {
             .andExpect(status().isOk())
             .andExpect(forwardedUrl("/demo-workbench.html"));
     }
+
+    @Test
+    void godWorkbenchPage_shouldBeServed() throws Exception {
+        mockMvc.perform(get("/demo/god-workbench"))
+            .andExpect(status().isOk())
+            .andExpect(forwardedUrl("/demo-god-workbench.html"));
+    }
 }

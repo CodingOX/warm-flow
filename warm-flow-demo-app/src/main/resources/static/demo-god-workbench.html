@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Warm-Flow 上帝视角演练台</title>
+  <link rel="stylesheet" href="/demo-god-workbench.css" />
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true"></div>
+        <div>
+          <h1>Warm-Flow 上帝视角演练台</h1>
+          <p class="subtitle">用于配置人员真实走完流程：看定义、看节点、填表单、刷新运行态流程图。</p>
+        </div>
+      </div>
+      <div class="mode-banner">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 3L20 7V12C20 16.8 16.6 20.7 12 21C7.4 20.7 4 16.8 4 12V7L12 3Z" stroke="#ea580c" stroke-width="2"/>
+          <path d="M12 8V12" stroke="#ea580c" stroke-width="2" stroke-linecap="round"/>
+          <path d="M12 16H12.01" stroke="#ea580c" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+        <div>
+          <strong>God Mode: ignore(true)</strong>
+          <p>父页面统一控制流转，演练提交跳过办理人权限校验。</p>
+        </div>
+      </div>
+    </header>
+
+    <aside class="panel">
+      <div class="panel-head">
+        <h2>流程配置中心</h2>
+        <p>加载已发布 definition，并从这里发起真实演练实例。</p>
+      </div>
+      <div class="panel-pad">
+        <div class="metric-grid">
+          <div class="metric">
+            <strong id="metricDefs">0</strong>
+            <span>已发布流程</span>
+          </div>
+          <div class="metric">
+            <strong id="metricVersion">--</strong>
+            <span>当前版本</span>
+          </div>
+          <div class="metric">
+            <strong id="metricStatus">未发起</strong>
+            <span>运行状态</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="definitionSelect">当前流程定义</label>
+          <select id="definitionSelect" class="select"></select>
+        </div>
+
+        <div class="button-row">
+          <button class="button" id="startBtn" type="button">发起演练</button>
+          <button class="button secondary" id="previewBtn" type="button">只看说明</button>
+        </div>
+
+        <div class="def-list" id="defList"></div>
+      </div>
+    </aside>
+
+    <section class="panel">
+      <div class="chart-wrap">
+        <div class="chart-toolbar">
+          <div class="chart-title">
+            <strong id="chartName">尚未选择流程</strong>
+            <span id="chartMeta">尚未发起演练实例</span>
+          </div>
+          <div class="legend">
+            <span><i class="dot"></i>运行态流程图</span>
+            <span><i class="dot current"></i>父页面统一控制</span>
+          </div>
+        </div>
+
+        <div class="iframe-shell">
+          <div class="iframe-label">
+            <strong>流程图 iframe</strong>
+            <span class="iframe-url" id="flowFrameUrl">/warm-flow-ui/index.html?type=FlowChart&id=...</span>
+          </div>
+          <iframe id="flowFrame" class="preview-frame" title="流程图 iframe"></iframe>
+        </div>
+
+        <div class="log chart-log" id="log"></div>
+      </div>
+    </section>
+
+    <aside class="panel right-panel">
+      <div class="panel-head">
+        <h2>节点操作与流转</h2>
+        <p>父页面收集表单快照，再调用 demo 上帝接口推进流程。</p>
+      </div>
+      <div class="panel-pad">
+        <div class="state-card">
+          <div class="state-row">
+            <span>当前实例</span>
+            <strong class="mono" id="instanceId">未发起</strong>
+          </div>
+          <div class="state-row">
+            <span>当前任务</span>
+            <strong class="mono" id="taskId">未发起</strong>
+          </div>
+          <div class="state-row identity">
+            <span>演练身份</span>
+            <strong class="mono">god-workbench</strong>
+          </div>
+        </div>
+
+        <div class="iframe-shell form-frame-shell">
+          <div class="iframe-label">
+            <strong id="formFrameTitle">表单 iframe</strong>
+            <span class="iframe-url" id="formFrameUrl">/warm-flow-ui/index.html?type=formCreate</span>
+          </div>
+          <iframe id="formFrame" class="preview-frame" title="表单 iframe"></iframe>
+        </div>
+
+        <div class="history-panel">
+          <div class="history-head">
+            <strong>历史步骤</strong>
+            <span id="historyMeta">发起实例后可查看已填写历史表单</span>
+          </div>
+          <div class="history-list" id="historyList">
+            <div class="history-empty">当前还没有历史步骤。</div>
+          </div>
+        </div>
+
+        <div class="form-preview">
+          <div class="preview-option">
+            <span>
+              <strong>本轮不实现 iframe 内 controls 视觉预览</strong>
+              第一版只保留父页面统一流转，避免改动共享 `formCreate` 的审批区语义。
+            </span>
+          </div>
+          <div class="field">
+            <label for="message">流转意见（可选）</label>
+            <textarea id="message" class="textarea">同意，流程配置验证通过。</textarea>
+          </div>
+          <div class="action-stack">
+            <button class="button orange" id="submitBtn" type="button">提交演练：正常流转</button>
+            <button class="button secondary" id="viewBtn" type="button">刷新两个 iframe</button>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <script src="/demo-god-workbench-state.js"></script>
+  <script src="/demo-god-workbench.js"></script>
+</body>
+</html>

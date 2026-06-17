@@ -6,7 +6,9 @@ Warm-Flow 的 demo 壳模块，用于源码联调和本地工作台观察。
 
 - `/demo/forms/published`：查询已发布表单
 - `/demo/workbench`：打开宿主页
+- `/demo/god-workbench`：打开上帝模式工作台
 - `/demo-workbench.html`：静态宿主页
+- `/demo-god-workbench.html`：上帝模式静态宿主页
 
 ## 启动
 
@@ -24,6 +26,17 @@ mvn -pl warm-flow-demo-app -am spring-boot:run
 - 表单设计器：`http://localhost:8080/warm-flow-ui/index.html?type=form`
 - 流程设计器：`http://localhost:8080/warm-flow-ui/index.html`
 - 宿主页：`http://localhost:8080/demo/workbench`
+- 上帝模式工作台：`http://localhost:8080/demo/god-workbench`
+
+## 上帝模式手工验证
+
+1. 打开 `http://localhost:8080/demo/god-workbench`
+2. 选择一个已发布流程并点击“发起演练”
+3. 等待 `formCreate` iframe 发出 `formInit`
+4. 在表单中修改业务字段
+5. 点击“提交演练：正常流转”
+6. 观察日志区出现 `formDataSnapshot` 和后端返回的新 `taskId`
+7. 观察 `FlowChart` iframe 和 `formCreate` iframe 同步刷新
 
 ## 说明
 

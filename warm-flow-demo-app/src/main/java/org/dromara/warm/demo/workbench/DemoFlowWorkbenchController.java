@@ -13,4 +13,9 @@ public class DemoFlowWorkbenchController {
     public String workbench() {
         return "forward:/demo-workbench.html";
     }
+
+    @GetMapping("/demo/god-workbench")
+    public String godWorkbench() {
+        return "forward:/demo-god-workbench.html";
+    }
 }
