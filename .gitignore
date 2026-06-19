@@ -37,3 +37,4 @@ build/
 .soloncode/
 /.qoder/
 .ace-tool/
+.worktrees/
